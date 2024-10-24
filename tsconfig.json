@@ -1,0 +1,18 @@
+{
+  "extends": "./base.json",
+  "exclude": ["node_modules"],
+  "compilerOptions": {
+    "declaration": true,
+    "moduleResolution": "node",
+    "module": "ESNext",
+    "lib": [
+      "ESNext"
+    ],
+    // "noImplicitAny": true,
+    "resolveJsonModule": true,
+    // "rootDir": ".",
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true
+  },
+}

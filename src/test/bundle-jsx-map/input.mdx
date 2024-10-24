@@ -1,0 +1,28 @@
+import Component from './component.mdx';
+import Nested from './nested.mdx';
+import NestedComponent from './nested-component.mdx';
+
+# Main
+
+<Map arr={props.arr}>
+  <NestedComponent />
+</Map>
+
+<Map arr={props.arr}>
+  <Component name={item} />
+</Map>
+
+<Map arr={props.arr} as="outerItem">
+  <Nested>
+    <Map arr={props.arr} as="innerItem">
+      <Component name={innerItem.num} />
+    </Map>
+  </Nested>
+</Map>
+
+<Map arr={props.arr} as="outerItem">
+  ### Outer Loop {outerItem}
+  <Map arr={props.arr} as="innerItem">
+    * Inner Loop: {innerItem}
+  </Map>
+</Map>
