@@ -8,6 +8,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "build": "tsc",
+    "release": "changeset publish",
     "changeset": "changeset"
   },
   "devDependencies": {
