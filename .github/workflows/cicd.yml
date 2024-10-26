@@ -35,6 +35,7 @@ jobs:
         id: changesets
         uses: changesets/action@v1
         with:
+          branch: main
           publish: yarn release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
