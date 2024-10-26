@@ -2,7 +2,7 @@ import { expect, test } from 'vitest'
 import { stringifyMDX, parseMDX, transformTree } from "../../index";
 
 const input = `
-<PromptDX.Conditional>
+<Conditional>
   <If condition={props.isVisible}>
     # Condition1
   </If>
@@ -10,17 +10,17 @@ const input = `
     # Condition2
   </ElseIf>
   <Else>
-    <PromptDX.Conditional>
+    <Conditional>
       <If condition={props.isNestedVisible}>
         # Nested Condition 1
       </If>
       <Else>
         # Nested Default
       </Else>
-    </PromptDX.Conditional>
+    </Conditional>
     # Default
   </Else>
-</PromptDX.Conditional>`;
+</Conditional>`;
 
 const compile = async (props: any) => {
   const tree = parseMDX(input);

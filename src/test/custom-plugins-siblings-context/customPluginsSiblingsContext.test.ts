@@ -3,9 +3,8 @@ import { expect, test } from 'vitest'
 import { parseMDX, PluginHandler, stringifyMDX, registerPlugin, transformTree } from "../../index";
 
 const PluginA: PluginHandler = async (_props, _children, pluginAPI) => {
-  const { getContext } = pluginAPI;
-  const context = getContext();
-  context.sharedValue = 'test';
+  const { createContext } = pluginAPI;
+  createContext({ sharedValue: 'test' });
   const paragraph = {
     type: 'paragraph',
     children: [
