@@ -1,6 +1,6 @@
 # TemplateDX
 
-TemplateDX is a declarative, extendable & composable file-format based on Markdown and JSX.
+TemplateDX is a declarative, extensible & composable template engine based on Markdown and JSX.
 
 It was built specifically for [PromptDX](https://github.com/puzzlet-ai/promptdx), but it has usability outside of just LLM prompts.
 
