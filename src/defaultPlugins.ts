@@ -2,12 +2,12 @@ import { registerPlugin } from './pluginRegistry';
 import type {
   Parent,
   Node,
-  Literal
 } from 'mdast';
 
 registerPlugin('Map', async (props, children, pluginAPI) => {
-  const { nodeAPI, nodeTypeHelpers, contextAPI } = pluginAPI;
+  const { createNodeTransformer, createChildContext, nodeTypeHelpers } = pluginAPI;
   const { NODE_TYPES } = nodeTypeHelpers;
+
   function areAllListItems(resultNodesPerItem: Node[][]): boolean {
     return resultNodesPerItem.every((processedNodes) =>
       processedNodes.every(
@@ -41,11 +41,18 @@ registerPlugin('Map', async (props, children, pluginAPI) => {
 
   const resultNodesPerItem = await Promise.all(
     arr.map(async (item: any, index: number) => {
-      contextAPI.addContextProp(itemVariableName, item);
-      contextAPI.addContextProp(indexVariableName, index);
+      const itemContext = createChildContext(
+        {
+          [itemVariableName]: item,
+          [indexVariableName]: index,
+        }
+      );
+
+      const itemTransformer = createNodeTransformer(itemContext);
+
       const processedChildren = await Promise.all(
         children.map(async (child) => {
-          const result = await nodeAPI.transformNode(child);
+          const result = await itemTransformer.transformNode(child);
           return Array.isArray(result) ? result : [result];
         })
       );
@@ -53,6 +60,7 @@ registerPlugin('Map', async (props, children, pluginAPI) => {
       return processedChildren.flat();
     })
   );
+
   const resultNodes = resultNodesPerItem.flat();
   if (areAllListItems(resultNodesPerItem)) {
     return [
@@ -68,15 +76,17 @@ registerPlugin('Map', async (props, children, pluginAPI) => {
   }
 });
 
-registerPlugin('PromptDX.Conditional', async (_props, children, pluginAPI) => {
-  const { nodeTypeHelpers, nodeAPI } = pluginAPI;
+registerPlugin('Conditional', async (_props, children, pluginAPI) => {
+  const { nodeTypeHelpers, createNodeTransformer, createChildContext } = pluginAPI;
   const { NODE_TYPES, isMdxJsxElement } = nodeTypeHelpers;
   let conditionMet = false;
   let resultNodes: Node[] = [];
 
   function isWhitespace(node: Node) {
-    return node.type === NODE_TYPES.TEXT &&
-      /^\s*$/.test((node as Literal).value);
+    return (
+      node.type === NODE_TYPES.TEXT &&
+      /^\s*$/.test((node as any).value)
+    );
   }
 
   for (const child of children) {
@@ -89,7 +99,9 @@ registerPlugin('PromptDX.Conditional', async (_props, children, pluginAPI) => {
     }
 
     const elementName = (child as any).name;
-    const childProps = nodeAPI.evaluateProps(child as any);
+    const context = createChildContext({});
+    const transformer = createNodeTransformer(context);
+    const childProps = transformer.evaluateProps(child as any);
 
     if (
       (elementName === 'If' || elementName === 'ElseIf') &&
@@ -106,7 +118,7 @@ registerPlugin('PromptDX.Conditional', async (_props, children, pluginAPI) => {
         conditionMet = true;
         const processedChildren = [];
         for (const grandChild of (child as Parent).children) {
-          const result = await nodeAPI.transformNode(grandChild);
+          const result = await transformer.transformNode(grandChild);
           processedChildren.push(
             ...(Array.isArray(result) ? result : [result])
           );
@@ -118,7 +130,7 @@ registerPlugin('PromptDX.Conditional', async (_props, children, pluginAPI) => {
       conditionMet = true;
       const processedChildren = [];
       for (const grandChild of (child as Parent).children) {
-        const result = await nodeAPI.transformNode(grandChild);
+        const result = await transformer.transformNode(grandChild);
         processedChildren.push(
           ...(Array.isArray(result) ? result : [result])
         );
