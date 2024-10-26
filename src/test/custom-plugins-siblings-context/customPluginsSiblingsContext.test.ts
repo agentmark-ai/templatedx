@@ -3,8 +3,9 @@ import { expect, test } from 'vitest'
 import { parseMDX, PluginHandler, stringifyMDX, registerPlugin, transformTree } from "../../index";
 
 const PluginA: PluginHandler = async (_props, _children, pluginAPI) => {
-  const { contextAPI } = pluginAPI;
-  contextAPI.addContextProp('sharedValue', 'test');
+  const { getContext } = pluginAPI;
+  const context = getContext();
+  context.sharedValue = 'test';
   const paragraph = {
     type: 'paragraph',
     children: [
@@ -17,8 +18,9 @@ const PluginA: PluginHandler = async (_props, _children, pluginAPI) => {
   return paragraph;
 };
 const PluginB: PluginHandler = async (_props, _children, pluginAPI) => {
-  const { contextAPI } = pluginAPI;
-  const sharedValue = contextAPI.readContextProp('sharedValue');
+  const { getContext } = pluginAPI;
+  const context = getContext();
+  const sharedValue = context.sharedValue;
   const paragraph = {
     type: 'paragraph',
     children: [

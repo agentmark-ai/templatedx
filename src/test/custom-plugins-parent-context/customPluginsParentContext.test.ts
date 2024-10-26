@@ -3,8 +3,9 @@ import { expect, test } from 'vitest'
 import { parseMDX, PluginHandler, stringifyMDX, registerPlugin, transformTree } from "../../index";
 
 const PluginA: PluginHandler = async (_props, children, pluginAPI) => {
-  const { nodeAPI, contextAPI } = pluginAPI;
-  contextAPI.addContextProp('sharedValue', 'test');
+  const { getContext, createNodeTransformer } = pluginAPI;
+  const context = getContext();
+  context.sharedValue = 'test';
   const pluginANode = {
     type: 'paragraph',
     children: [
@@ -16,14 +17,15 @@ const PluginA: PluginHandler = async (_props, children, pluginAPI) => {
   };
 
   const processedChildren = await Promise.all(
-    children.map(async (child) => await nodeAPI.transformNode(child))
+    children.map(async (child) => await createNodeTransformer(context).transformNode(child))
   );
 
   return [pluginANode, ...processedChildren.flat()];
 };
 const PluginB: PluginHandler = async (props, children, pluginAPI) => {
-  const { nodeAPI, contextAPI } = pluginAPI;
-  const sharedValue = contextAPI.readContextProp('sharedValue');
+  const { createNodeTransformer, getContext} = pluginAPI;
+  const context = getContext();
+  const sharedValue = context.sharedValue;
   const pluginANode = {
     type: 'paragraph',
     children: [
@@ -35,7 +37,7 @@ const PluginB: PluginHandler = async (props, children, pluginAPI) => {
   };
 
   const processedChildren = await Promise.all(
-    children.map(async (child) => await nodeAPI.transformNode(child))
+    children.map(async (child) => await createNodeTransformer(context).transformNode(child))
   );
 
   return [pluginANode, ...processedChildren.flat()];

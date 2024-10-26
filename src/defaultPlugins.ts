@@ -6,7 +6,8 @@ import type {
 } from 'mdast';
 
 registerPlugin('Map', async (props, children, pluginAPI) => {
-  const { nodeAPI, nodeTypeHelpers, contextAPI } = pluginAPI;
+  const { createNodeTransformer, getContext, nodeTypeHelpers } = pluginAPI;
+  const context = getContext();
   const { NODE_TYPES } = nodeTypeHelpers;
   function areAllListItems(resultNodesPerItem: Node[][]): boolean {
     return resultNodesPerItem.every((processedNodes) =>
@@ -41,11 +42,12 @@ registerPlugin('Map', async (props, children, pluginAPI) => {
 
   const resultNodesPerItem = await Promise.all(
     arr.map(async (item: any, index: number) => {
-      contextAPI.addContextProp(itemVariableName, item);
-      contextAPI.addContextProp(indexVariableName, index);
+      context[itemVariableName] = item;
+      context[indexVariableName] = index;
       const processedChildren = await Promise.all(
         children.map(async (child) => {
-          const result = await nodeAPI.transformNode(child);
+          const transformer = createNodeTransformer(context);
+          const result = await transformer.transformNode(child);
           return Array.isArray(result) ? result : [result];
         })
       );
@@ -69,8 +71,9 @@ registerPlugin('Map', async (props, children, pluginAPI) => {
 });
 
 registerPlugin('PromptDX.Conditional', async (_props, children, pluginAPI) => {
-  const { nodeTypeHelpers, nodeAPI } = pluginAPI;
+  const { nodeTypeHelpers, createNodeTransformer, getContext } = pluginAPI;
   const { NODE_TYPES, isMdxJsxElement } = nodeTypeHelpers;
+  const context = getContext();
   let conditionMet = false;
   let resultNodes: Node[] = [];
 
@@ -87,9 +90,10 @@ registerPlugin('PromptDX.Conditional', async (_props, children, pluginAPI) => {
         `Invalid node type '${child.type}' inside <Conditional> component.`
       );
     }
+    const childTransformer = createNodeTransformer(context);
 
     const elementName = (child as any).name;
-    const childProps = nodeAPI.evaluateProps(child as any);
+    const childProps = childTransformer.evaluateProps(child as any);
 
     if (
       (elementName === 'If' || elementName === 'ElseIf') &&
@@ -106,7 +110,8 @@ registerPlugin('PromptDX.Conditional', async (_props, children, pluginAPI) => {
         conditionMet = true;
         const processedChildren = [];
         for (const grandChild of (child as Parent).children) {
-          const result = await nodeAPI.transformNode(grandChild);
+          const grandChildTransformer = createNodeTransformer(context);
+          const result = await grandChildTransformer.transformNode(grandChild);
           processedChildren.push(
             ...(Array.isArray(result) ? result : [result])
           );
@@ -118,7 +123,8 @@ registerPlugin('PromptDX.Conditional', async (_props, children, pluginAPI) => {
       conditionMet = true;
       const processedChildren = [];
       for (const grandChild of (child as Parent).children) {
-        const result = await nodeAPI.transformNode(grandChild);
+        const grandChildTransformer = createNodeTransformer(context);
+        const result = await grandChildTransformer.transformNode(grandChild);
         processedChildren.push(
           ...(Array.isArray(result) ? result : [result])
         );

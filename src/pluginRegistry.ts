@@ -10,23 +10,12 @@ interface NodeTypeHelpers {
   NODE_TYPES: typeof NODE_TYPES;
 }
 
-interface ContextAPI {
-  updateContextProp(prop: string, value: any): void;
-  addContextProp(prop: string, value: any): void;
-  readContextProp(prop: string): any;
-}
-
-interface NodeAPI {
-  transformNode(node: Node): Promise<Node | Node[]>;
-  evaluateProps(node: any): Record<string, any>;
-  resolveExpression(expression: string, context: Context): any;
-}
-
 export interface PluginAPI {
-  nodeAPI: NodeAPI;
-  contextAPI: ContextAPI;
   nodeTypeHelpers: NodeTypeHelpers;
+  createNodeTransformer: (context: Context) => any;
+  getContext: () => Context;
 }
+
 export interface PluginHandler {
   (props: Record<string, any>, children: Node[], pluginAPI: PluginAPI): Promise<Node | Node[]>;
 }
@@ -34,9 +23,17 @@ export interface PluginHandler {
 export const pluginRegistry: Record<string, PluginHandler> = {};
 
 export const registerPlugin = (componentName: string, handler: PluginHandler) => {
-  pluginRegistry[componentName] = handler;
+  if (!pluginRegistry[componentName]) {
+    pluginRegistry[componentName] = handler;
+  } else {
+    throw new Error(`Plugin: ${componentName} already exists`);
+  }
 };
 
 export const removePlugin = (componentName: string) => {
-  delete pluginRegistry[componentName];
+  if (pluginRegistry[componentName]) {
+    delete pluginRegistry[componentName];
+  } else {
+    throw new Error(`Plugin: ${componentName} does not exist`);
+  }
 };

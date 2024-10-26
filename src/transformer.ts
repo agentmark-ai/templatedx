@@ -53,7 +53,7 @@ class NodeTransformer {
   context: Context;
 
   constructor(context: Context) {
-    this.context = context;
+    this.context = cloneObject(context);
   }
 
   async transformNode(node: Node): Promise<Node | Node[]> {
@@ -73,8 +73,7 @@ class NodeTransformer {
 
       const processedChildren = await Promise.all(
         node.children.map(async (child) => {
-          const childContext = cloneObject(this.context);
-          const childTransformer = new NodeTransformer(childContext);
+          const childTransformer = new NodeTransformer(this.context);
           const result = await childTransformer.transformNode(child);
           return Array.isArray(result) ? result : [result];
         })
@@ -221,19 +220,9 @@ class NodeTransformer {
       if (pluginRegistry[elementName]) {
         const handler = pluginRegistry[elementName];
         const props = this.evaluateProps(node);
-        const nodeAPI = {
-          transformNode: (node: Node) => this.transformNode(node),
-          evaluateProps: (node: any) => this.evaluateProps(node),
-          resolveExpression: (expr: string) => this.resolveExpression(expr),
-        }
-        const contextAPI = {
-          updateContextProp: (prop: string, value: string) => this.context[prop] = value,
-          addContextProp: (prop: string, value: string) => this.context[prop] = value,
-          readContextProp: (prop: string) => this.context[prop]
-        }
         const pluginAPI: PluginAPI = {
-          contextAPI,
-          nodeAPI,
+          createNodeTransformer: (context: any) => new NodeTransformer(context),
+          getContext: () => this.context,
           nodeTypeHelpers,
         };
         const result = await handler(props, node.children, pluginAPI);
@@ -243,8 +232,7 @@ class NodeTransformer {
 
         const processedChildren = await Promise.all(
           node.children.map(async (child) => {
-            const childContext = cloneObject(this.context);
-            const childTransformer = new NodeTransformer(childContext);
+            const childTransformer = new NodeTransformer(this.context);
             const result = await childTransformer.transformNode(child);
             return Array.isArray(result) ? result : [result];
           })
