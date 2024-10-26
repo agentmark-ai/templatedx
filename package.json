@@ -1,17 +1,19 @@
 {
-  "name": "@repo/template-dx",
+  "name": "@puzzlet/templatedx",
   "version": "0.0.0",
-  "private": true,
   "license": "MIT",
-  "main": "./src/index.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "build": "tsc"
+    "build": "tsc",
+    "changeset": "changeset"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.25.4",
     "@babel/preset-typescript": "^7.24.7",
+    "@changesets/cli": "^2.27.9",
     "@types/js-yaml": "^4.0.9",
     "@types/mdast": "^4.0.4",
     "@types/node": "^22.7.9",
