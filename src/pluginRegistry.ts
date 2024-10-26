@@ -1,6 +1,6 @@
 import { Node } from "mdast";
 import { NODE_TYPES } from './constants';
-import { Context } from "./context";
+import type { Context } from "./context";
 
 interface NodeTypeHelpers {
   isMdxJsxElement(node: Node): boolean;
