@@ -1,5 +1,11 @@
 # @puzzlet/templatedx
 
+## 0.0.2
+
+### Patch Changes
+
+- 6a85365: CICD fix
+
 ## 0.0.1
 
 ### Patch Changes
