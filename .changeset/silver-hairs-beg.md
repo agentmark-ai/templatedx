@@ -1,5 +1,5 @@
 ---
-"@repo/template-dx": patch
+"@puzzlet/templatedx": patch
 ---
 
 Initial Release
