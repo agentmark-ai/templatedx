@@ -1,18 +1,18 @@
 {
-  "extends": "./base.json",
-  "exclude": ["node_modules"],
   "compilerOptions": {
+    "outDir": "dist",
     "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
     "moduleResolution": "node",
     "module": "ESNext",
-    "lib": [
-      "ESNext"
-    ],
-    // "noImplicitAny": true,
+    "target": "ES2019",
+    "lib": ["ESNext"],
     "resolveJsonModule": true,
-    // "rootDir": ".",
     "strict": true,
     "skipLibCheck": true,
     "esModuleInterop": true
   },
+  "include": ["src"],
+  "exclude": ["node_modules", "**/__tests__/*"]
 }

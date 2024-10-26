@@ -73,7 +73,6 @@ class NodeTransformer {
 
       const processedChildren = await Promise.all(
         node.children.map(async (child) => {
-          // Clone context for each child node
           const childContext = cloneObject(this.context);
           const childTransformer = new NodeTransformer(childContext);
           const result = await childTransformer.transformNode(child);
@@ -244,7 +243,6 @@ class NodeTransformer {
 
         const processedChildren = await Promise.all(
           node.children.map(async (child) => {
-            // Clone context for each child node
             const childContext = cloneObject(this.context);
             const childTransformer = new NodeTransformer(childContext);
             const result = await childTransformer.transformNode(child);

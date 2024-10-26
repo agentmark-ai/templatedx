@@ -2,12 +2,11 @@
 
 TemplateDX is a declarative, extensible & composable template engine based on Markdown and JSX.
 
-## Getting Started
+It was built specifically for [PromptDX](https://github.com/puzzlet-ai/promptdx), but it has usability outside of just LLM prompts.
 
-1. `yarn`
-2. `yarn test`
+## Documentation
 
-## Plugins
+Using TemplateDX: 
 
 ### Built-Ins
 
@@ -16,3 +15,9 @@ TemplateDX is a declarative, extensible & composable template engine based on Ma
 3. If
 4. ElseIf
 5. Else
+
+## Developing
+
+1. `yarn`
+2. `yarn test`
+3. `yarn build`
