@@ -1,5 +1,11 @@
 # @puzzlet/templatedx
 
+## 0.0.3
+
+### Patch Changes
+
+- 5ecad70: Nested map with conditional, introducing scope chain
+
 ## 0.0.2
 
 ### Patch Changes
