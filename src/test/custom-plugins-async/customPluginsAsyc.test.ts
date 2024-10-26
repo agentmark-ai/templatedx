@@ -8,8 +8,8 @@ function delay(ms: number): Promise<void> {
 
 const FetchData: PluginHandler = async (_props, children, pluginAPI) => {
   await delay(10);
-  const { createNodeTransformer, getContext, createContext } = pluginAPI;
-  const context = createContext({ data: 42 });
+  const { createNodeTransformer, createChildContext } = pluginAPI;
+  const context = createChildContext({ data: 42 });
   const processedChildren = await Promise.all(
     children.map(async (child) => createNodeTransformer(context).transformNode(child))
   );

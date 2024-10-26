@@ -1,5 +1,6 @@
 import { Node } from "mdast";
 import { NODE_TYPES } from './constants';
+import { Context } from "./context";
 
 interface NodeTypeHelpers {
   isMdxJsxElement(node: Node): boolean;
@@ -12,8 +13,8 @@ interface NodeTypeHelpers {
 export interface PluginAPI {
   nodeTypeHelpers: NodeTypeHelpers;
   createNodeTransformer: (context: any) => any;
-  getContext: () => any;
-  createContext: (variables: Record<string, any>) => any;
+  readContextValue: (key: string) => any;
+  createChildContext: (variables: Record<string, any>) => Context;
 }
 
 export interface PluginHandler {

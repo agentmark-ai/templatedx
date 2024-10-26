@@ -2,11 +2,10 @@ import { registerPlugin } from './pluginRegistry';
 import type {
   Parent,
   Node,
-  Literal
 } from 'mdast';
 
 registerPlugin('Map', async (props, children, pluginAPI) => {
-  const { createNodeTransformer, createContext, getContext, nodeTypeHelpers } = pluginAPI;
+  const { createNodeTransformer, createChildContext, nodeTypeHelpers } = pluginAPI;
   const { NODE_TYPES } = nodeTypeHelpers;
 
   function areAllListItems(resultNodesPerItem: Node[][]): boolean {
@@ -42,7 +41,7 @@ registerPlugin('Map', async (props, children, pluginAPI) => {
 
   const resultNodesPerItem = await Promise.all(
     arr.map(async (item: any, index: number) => {
-      const itemContext = createContext(
+      const itemContext = createChildContext(
         {
           [itemVariableName]: item,
           [indexVariableName]: index,
@@ -78,7 +77,7 @@ registerPlugin('Map', async (props, children, pluginAPI) => {
 });
 
 registerPlugin('Conditional', async (_props, children, pluginAPI) => {
-  const { nodeTypeHelpers, createNodeTransformer, getContext } = pluginAPI;
+  const { nodeTypeHelpers, createNodeTransformer, createChildContext } = pluginAPI;
   const { NODE_TYPES, isMdxJsxElement } = nodeTypeHelpers;
   let conditionMet = false;
   let resultNodes: Node[] = [];
@@ -100,7 +99,8 @@ registerPlugin('Conditional', async (_props, children, pluginAPI) => {
     }
 
     const elementName = (child as any).name;
-    const transformer = createNodeTransformer(getContext());
+    const context = createChildContext({});
+    const transformer = createNodeTransformer(context);
     const childProps = transformer.evaluateProps(child as any);
 
     if (

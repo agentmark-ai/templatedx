@@ -29,7 +29,7 @@ const PluginB: PluginHandler = async (props, children, pluginAPI) => {
     children: [
       {
         type: 'text',
-        value: `Shared value should be accessible: ${sharedValue}, Props should be accessible: ${props.var}`,
+        value: `Shared value should not be accessible: ${sharedValue}`,
       },
     ],
   };
@@ -45,11 +45,9 @@ const PluginB: PluginHandler = async (props, children, pluginAPI) => {
 registerPlugin('PluginA', PluginA);
 registerPlugin('PluginB', PluginB);
 
-test('parent-child should share context', async () => {
+test('sublings should not share context', async () => {
   const input = getInput(__dirname);
   const tree = parseMDX(input);
-  const processed = await transformTree(tree);
-  const compiled = stringifyMDX(processed);
-  const output = getOutput(__dirname);
-  expect(compiled).toEqual(output);
+  const transformFn = async () => await transformTree(tree);
+  expect(transformFn).rejects.toThrowError();
 });

@@ -1,7 +1,7 @@
 import { NODE_TYPES, MDX_JSX_ATTRIBUTE_TYPES } from './constants';
 import { OperatorFunction } from './types';
 import { pluginRegistry, PluginAPI } from './pluginRegistry';
-import { cloneObject, stringifyValue } from './utils';
+import { stringifyValue } from './utils';
 import {
   isMdxJsxElement,
   isMdxJsxFlowElement,
@@ -235,8 +235,8 @@ export class NodeTransformer {
         const props = this.evaluateProps(node);
         const pluginAPI: PluginAPI = {
           createNodeTransformer: (context: any) => new NodeTransformer(context),
-          getContext: () => this.context,
-          createContext: (variables: Record<string, any>) => this.context.createChild(variables),
+          readContextValue: (key: string) => this.context.get(key),
+          createChildContext: (variables: Record<string, any>) => this.context.createChild(variables),
           nodeTypeHelpers,
         };
         const result = await handler(props, node.children, pluginAPI);
