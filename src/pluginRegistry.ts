@@ -1,5 +1,4 @@
 import { Node } from "mdast";
-import { Context } from './types';
 import { NODE_TYPES } from './constants';
 
 interface NodeTypeHelpers {
@@ -12,8 +11,9 @@ interface NodeTypeHelpers {
 
 export interface PluginAPI {
   nodeTypeHelpers: NodeTypeHelpers;
-  createNodeTransformer: (context: Context) => any;
-  getContext: () => Context;
+  createNodeTransformer: (context: any) => any;
+  getContext: () => any;
+  createContext: (variables: Record<string, any>) => any;
 }
 
 export interface PluginHandler {

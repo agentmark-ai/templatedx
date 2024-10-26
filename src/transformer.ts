@@ -1,5 +1,5 @@
 import { NODE_TYPES, MDX_JSX_ATTRIBUTE_TYPES } from './constants';
-import { Context, OperatorFunction } from './types';
+import { OperatorFunction } from './types';
 import { pluginRegistry, PluginAPI } from './pluginRegistry';
 import { cloneObject, stringifyValue } from './utils';
 import {
@@ -16,12 +16,14 @@ import {
 } from 'mdast-util-mdx';
 import type { ExtractedField } from './extractFieldsPlugin';
 import extractFieldsPlugin from './extractFieldsPlugin';
+import { Context } from './context';
 import type { 
   Root,
   Node, 
   Parent, 
   RootContent,
 } from 'mdast';
+
 
 export const extractFields = async (
   tree: Root,
@@ -49,11 +51,12 @@ const nodeTypeHelpers = {
   NODE_TYPES,
 };
 
-class NodeTransformer {
-  context: Context;
+
+export class NodeTransformer {
+  private context: Context;
 
   constructor(context: Context) {
-    this.context = cloneObject(context);
+    this.context = context;
   }
 
   async transformNode(node: Node): Promise<Node | Node[]> {
@@ -142,20 +145,30 @@ class NodeTransformer {
     if (!variablePath) {
       throw new Error(`Variable path cannot be empty.`);
     }
-
+  
     const parts = variablePath.split('.');
-    let value: any = this.context;
-
-    for (const part of parts) {
-      if (value && typeof value === 'object' && part in value) {
-        value = value[part];
-      } else {
-        throw new Error(`Variable "${variablePath}" is not defined in the context.`);
-      }
+    let value: any;
+  
+    try {
+      value = this.context.get(parts[0]);
+    } catch (error) {
+      throw new Error(`Variable "${parts[0]}" is not defined in the context.`);
     }
-
+  
+    for (let i = 1; i < parts.length; i++) {
+      const part = parts[i];
+      if (value == null) {
+        throw new Error(
+          `Cannot access property "${part}" of null or undefined in "${variablePath}".`
+        );
+      }
+      // Access property safely
+      value = value[part];
+    }
+  
     return value;
   }
+  
 
   evaluateBinaryExpression(node: jsep.BinaryExpression): any {
     const operatorFunctions: { [key: string]: OperatorFunction } = {
@@ -223,6 +236,7 @@ class NodeTransformer {
         const pluginAPI: PluginAPI = {
           createNodeTransformer: (context: any) => new NodeTransformer(context),
           getContext: () => this.context,
+          createContext: (variables: Record<string, any>) => this.context.createChild(variables),
           nodeTypeHelpers,
         };
         const result = await handler(props, node.children, pluginAPI);
@@ -279,7 +293,7 @@ export const transformTree = async (
   tree: Root,
   props: Record<string, any> = {}
 ): Promise<Root> => {
-  const context: Context = { props };
+  const context = new Context({ props });
   const transformer = new NodeTransformer(context);
   const processedTree = await transformer.transformNode(tree);
   return processedTree as Root;
