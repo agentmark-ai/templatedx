@@ -17,6 +17,7 @@ import {
 } from 'mdast-util-mdx';
 import type { ExtractedField } from './extract-fields';
 import extractFieldsFromAst from './extract-fields';
+import { FilterRegistry } from './filter-registry';
 import { Scope } from './scope';
 import type { 
   Root,
@@ -135,11 +136,35 @@ export class NodeTransformer {
         return this.evaluateMemberExpression(node as jsep.MemberExpression);
 
       case 'CallExpression':
-        throw new Error(`Function calls are not supported.`);
+        return this.evaluateCallExpression(node as jsep.CallExpression);
 
       default:
         throw new Error(`Unsupported node type: ${node.type}`);
     }
+  }
+  
+  evaluateCallExpression(node: jsep.CallExpression): any {
+    const callee = node.callee;
+
+    // Ensure the callee is an identifier (function name)
+    if (callee.type !== 'Identifier') {
+      throw new Error(`Only calls to registered filters are allowed.`);
+    }
+
+    const functionName = (callee as jsep.Identifier).name;
+
+    // Retrieve the filter function from the FilterRegistry
+    const filterFunction = FilterRegistry.get(functionName);
+    if (!filterFunction) {
+      throw new Error(`Filter "${functionName}" is not registered.`);
+    }
+
+    // Evaluate arguments
+    const args = node.arguments.map(arg => this.evaluateJsepExpression(arg));
+
+    // Apply the filter function
+    const [input, ...rest] = args;
+    return filterFunction(input, ...rest);
   }
 
   resolveVariable(variablePath: string): any {
