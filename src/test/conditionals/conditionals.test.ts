@@ -2,25 +2,21 @@ import { expect, test } from 'vitest'
 import { stringifyMDX, parseMDX, transformTree } from "../../index";
 
 const input = `
-<Conditional>
-  <If condition={props.isVisible}>
-    # Condition1
+<If condition={props.isVisible}>
+  # Condition1
+</If>
+<ElseIf condition={props.num == 2}>
+  # Condition2
+</ElseIf>
+<Else>
+  <If condition={props.isNestedVisible}>
+    # Nested Condition 1
   </If>
-  <ElseIf condition={props.num == 2}>
-    # Condition2
-  </ElseIf>
   <Else>
-    <Conditional>
-      <If condition={props.isNestedVisible}>
-        # Nested Condition 1
-      </If>
-      <Else>
-        # Nested Default
-      </Else>
-    </Conditional>
-    # Default
+    # Nested Default
   </Else>
-</Conditional>`;
+  # Default
+</Else>`;
 
 const compile = async (props: any) => {
   const tree = parseMDX(input);
@@ -29,8 +25,12 @@ const compile = async (props: any) => {
   return result;
 }
 test('handles conditionals', async () => {
-  expect(await compile({ isVisible: true, isNestedVisible: false, num: 4 })).toEqual(`# Condition1\n`);
-  expect(await compile({ isVisible: false, isNestedVisible: false, num: 2 })).toEqual(`# Condition2\n`);
-  expect(await compile({ isVisible: false, isNestedVisible: true, num: 3 })).toEqual(`# Nested Condition 1\n\n# Default\n`);
-  expect(await compile({ isVisible: false, isNestedVisible: false, num: 3 })).toEqual(`# Nested Default\n\n# Default\n`);
+  expect(await compile({ isVisible: true, isNestedVisible: false, num: 4 }))
+    .toEqual(`# Condition1\n`);
+  expect(await compile({ isVisible: false, isNestedVisible: false, num: 2 }))
+    .toEqual(`# Condition2\n`);
+  expect(await compile({ isVisible: false, isNestedVisible: true, num: 3 }))
+    .toEqual(`# Nested Condition 1\n\n# Default\n`);
+  expect(await compile({ isVisible: false, isNestedVisible: false, num: 3 }))
+    .toEqual(`# Nested Default\n\n# Default\n`);
 });

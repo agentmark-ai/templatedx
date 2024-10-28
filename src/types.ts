@@ -14,11 +14,6 @@ export type OperatorFunction = (
   nodeRight: jsep.Expression,
 ) => any;
 
-export interface Context {
-  props: Record<string, any>;
-  [key: string]: any;
-}
-
 export type ContentLoader = (modulePath: string) => Promise<string>;
 
 export interface ExtractedField {

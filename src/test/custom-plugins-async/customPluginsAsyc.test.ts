@@ -1,23 +1,38 @@
 import { getInput, getOutput } from "../helpers";
 import { expect, test } from 'vitest'
-import { parseMDX, PluginHandler, stringifyMDX, registerPlugin, transformTree } from "../../index";
+import { parseMDX, stringifyMDX, ElementPluginRegistry, transformTree } from "../../index";
+import { Node } from "mdast";
+import { ElementPlugin } from "../../index";
+import type { PluginContext } from "../../index";
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-const FetchData: PluginHandler = async (_props, children, pluginAPI) => {
-  await delay(10);
-  const { createNodeTransformer, createChildContext } = pluginAPI;
-  const context = createChildContext({ data: 42 });
-  const processedChildren = await Promise.all(
-    children.map(async (child) => createNodeTransformer(context).transformNode(child))
-  );
+class FetchDataPlugin extends ElementPlugin {
+  async transform(
+    _props: Record<string, any>,
+    children: Node[],
+    context: PluginContext
+  ): Promise<Node[] | Node> {
+    // Introduce a delay of 10 milliseconds
+    await delay(10);
 
-  return processedChildren.flat();
-};
+    const { createNodeTransformer, scope } = context;
+    const childScope = scope.createChild({ data: 42 });
 
-registerPlugin('FetchData', FetchData);
+    const nodeTransformer = createNodeTransformer(childScope);
+    const processedChildren = await Promise.all(
+      children.map(async (child) => {
+        const transformed = await nodeTransformer.transformNode(child);
+        return Array.isArray(transformed) ? transformed : [transformed];
+      })
+    );
+
+    return processedChildren.flat();
+  }
+}
+ElementPluginRegistry.register(new FetchDataPlugin(), ['FetchData']);
 
 test('async plugins should work', async () => {
   const input = getInput(__dirname);

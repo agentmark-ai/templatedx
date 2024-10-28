@@ -1,6 +1,7 @@
 import { NODE_TYPES, MDX_JSX_ATTRIBUTE_TYPES } from './constants';
 import { OperatorFunction } from './types';
-import { pluginRegistry, PluginAPI } from './pluginRegistry';
+import { ElementPluginRegistry } from './element-plugin-registry';
+import { PluginContext } from './element-plugin';
 import { stringifyValue } from './utils';
 import {
   isMdxJsxElement,
@@ -8,15 +9,15 @@ import {
   isMdxJsxTextElement,
   isParentNode,
   createBaseProcessor,
-} from './astUtils';
+} from './ast-utils';
 import jsep from 'jsep';
 import {
   MdxJsxFlowElement,
   MdxJsxTextElement,
 } from 'mdast-util-mdx';
-import type { ExtractedField } from './extractFieldsPlugin';
-import extractFieldsPlugin from './extractFieldsPlugin';
-import { Context } from './context';
+import type { ExtractedField } from './extract-fields';
+import extractFieldsFromAst from './extract-fields';
+import { Scope } from './scope';
 import type { 
   Root,
   Node, 
@@ -33,7 +34,7 @@ export const extractFields = async (
   const extractedFields: ExtractedField[] = [];
   const processed = await transformTree(tree, props || {});
 
-  const processor = createBaseProcessor().use(extractFieldsPlugin, {
+  const processor = createBaseProcessor().use(extractFieldsFromAst, {
     fields: fieldNames,
     storage: extractedFields,
   });
@@ -53,10 +54,10 @@ const nodeTypeHelpers = {
 
 
 export class NodeTransformer {
-  private context: Context;
+  private scope: Scope;
 
-  constructor(context: Context) {
-    this.context = context;
+  constructor(scope: Scope) {
+    this.scope = scope;
   }
 
   async transformNode(node: Node): Promise<Node | Node[]> {
@@ -76,7 +77,7 @@ export class NodeTransformer {
 
       const processedChildren = await Promise.all(
         node.children.map(async (child) => {
-          const childTransformer = new NodeTransformer(this.context);
+          const childTransformer = new NodeTransformer(this.scope);
           const result = await childTransformer.transformNode(child);
           return Array.isArray(result) ? result : [result];
         })
@@ -150,9 +151,9 @@ export class NodeTransformer {
     let value: any;
   
     try {
-      value = this.context.get(parts[0]);
+      value = this.scope.get(parts[0]);
     } catch (error) {
-      throw new Error(`Variable "${parts[0]}" is not defined in the context.`);
+      throw new Error(`Variable "${parts[0]}" is not defined in the scope.`);
     }
   
     for (let i = 1; i < parts.length; i++) {
@@ -230,23 +231,23 @@ export class NodeTransformer {
   ): Promise<Node | Node[]> {
     try {
       const elementName = node.name!;
-      if (pluginRegistry[elementName]) {
-        const handler = pluginRegistry[elementName];
+      const plugin = ElementPluginRegistry.getPlugin(elementName);
+      if (plugin) {
         const props = this.evaluateProps(node);
-        const pluginAPI: PluginAPI = {
-          createNodeTransformer: (context: any) => new NodeTransformer(context),
-          readContextValue: (key: string) => this.context.get(key),
-          createChildContext: (variables: Record<string, any>) => this.context.createChild(variables),
+        const pluginContext: PluginContext = {
+          createNodeTransformer: (scope: Scope) => new NodeTransformer(scope),
+          scope: this.scope,
+          elementName,
           nodeTypeHelpers,
         };
-        const result = await handler(props, node.children, pluginAPI);
+        const result = await plugin.transform(props, node.children, pluginContext);
         return result;
       } else {
         const newNode = { ...node } as Parent;
 
         const processedChildren = await Promise.all(
           node.children.map(async (child) => {
-            const childTransformer = new NodeTransformer(this.context);
+            const childTransformer = new NodeTransformer(this.scope);
             const result = await childTransformer.transformNode(child);
             return Array.isArray(result) ? result : [result];
           })
@@ -293,8 +294,8 @@ export const transformTree = async (
   tree: Root,
   props: Record<string, any> = {}
 ): Promise<Root> => {
-  const context = new Context({ props });
-  const transformer = new NodeTransformer(context);
+  const scope = new Scope({ props });
+  const transformer = new NodeTransformer(scope);
   const processedTree = await transformer.transformNode(tree);
   return processedTree as Root;
 };
