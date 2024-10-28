@@ -7,7 +7,7 @@ import {
   isMdxJsxElement,
   isParentNode,
   parseMDX,
-} from './astUtils';
+} from './ast-utils';
 
 export async function bundleMDX(
   mdxContent: string,

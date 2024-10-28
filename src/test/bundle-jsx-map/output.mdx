@@ -1,27 +1,27 @@
 # Main
 
-<Map arr={props.arr}>
+<ForEach arr={props.arr}>
   ## Nested 1
 
   ### Nested 2
-</Map>
+</ForEach>
 
-<Map arr={props.arr}>
+<ForEach arr={props.arr}>
   ## Component {item}
-</Map>
+</ForEach>
 
-<Map arr={props.arr} as="outerItem">
+<ForEach arr={props.arr} as="outerItem">
   ## Nested
 
-    <Map arr={props.arr} as="innerItem">
+    <ForEach arr={props.arr} as="innerItem">
       ## Component {innerItem.num}
-    </Map>
-</Map>
+    </ForEach>
+</ForEach>
 
-<Map arr={props.arr} as="outerItem">
+<ForEach arr={props.arr} as="outerItem">
   ### Outer Loop {outerItem}
 
-  <Map arr={props.arr} as="innerItem">
+  <ForEach arr={props.arr} as="innerItem">
     * Inner Loop: {innerItem}
-  </Map>
-</Map>
+  </ForEach>
+</ForEach>

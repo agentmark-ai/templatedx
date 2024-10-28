@@ -8,19 +8,19 @@ import {
   stringifyMDX,
   parseMDX,
   getFrontMatter,
-} from "./astUtils";
-import { registerPlugin } from "./pluginRegistry";
-import type { PluginHandler } from "./pluginRegistry";
-import type { ExtractedField } from "./extractFieldsPlugin";
+} from "./ast-utils";
+import { ElementPluginRegistry } from "./element-plugin-registry";
+import { ElementPlugin, PluginContext } from "./element-plugin";
+import type { ExtractedField } from "./extract-fields";
 import type { ContentLoader } from "./types";
 import type { Root } from "mdast";
-import './defaultPlugins';
+import './builtin-plugins';
 
 export type {
   ContentLoader,
   Root as Ast,
   ExtractedField,
-  PluginHandler
+  PluginContext,
 };
 export {
   parseMDX,
@@ -30,5 +30,6 @@ export {
   extractFields,
   compressAst,
   transformTree,
-  registerPlugin
+  ElementPluginRegistry,
+  ElementPlugin
 };

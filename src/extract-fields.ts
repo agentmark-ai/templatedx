@@ -18,7 +18,7 @@ interface ExtractFieldsOptions {
   storage: ExtractedField[];
 }
 
-const extractFieldsPlugin: Plugin<[ExtractFieldsOptions], Root> = (options) => {
+const extractFields: Plugin<[ExtractFieldsOptions], Root> = (options) => {
   const { fields, storage } = options;
 
   return (tree: Root) => {
@@ -47,4 +47,4 @@ const extractFieldsPlugin: Plugin<[ExtractFieldsOptions], Root> = (options) => {
   };
 };
 
-export default extractFieldsPlugin;
+export default extractFields;

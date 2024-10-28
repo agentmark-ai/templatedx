@@ -1,49 +1,66 @@
 import { getInput, getOutput } from "../helpers";
 import { expect, test } from 'vitest'
-import { parseMDX, PluginHandler, stringifyMDX, registerPlugin, transformTree } from "../../index";
+import { parseMDX, stringifyMDX, transformTree, ElementPlugin, PluginContext, ElementPluginRegistry } from "../../index";
+import { Node } from "mdast";
 
-const PluginA: PluginHandler = async (_props, children, pluginAPI) => {
-  const { createChildContext, createNodeTransformer } = pluginAPI;
-  const pluginANode = {
-    type: 'paragraph',
-    children: [
-      {
-        type: 'text',
-        value: 'PluginA has set the shared value.',
-      },
-    ],
-  };
+class PluginAPlugin extends ElementPlugin {
+  async transform(
+    _props: Record<string, any>,
+    children: Node[],
+    context: PluginContext
+  ): Promise<Node[] | Node> {
+    const { createNodeTransformer, scope } = context;
+    const pluginANode = {
+      type: "paragraph",
+      children: [
+        {
+          type: "text",
+          value: "PluginA has set the shared value.",
+        },
+      ],
+    };
+    const childScope = scope.createChild({ sharedValue: "test" });
+    const nodeTransformer = createNodeTransformer(childScope);
+    const processedChildren = await Promise.all(
+      children.map(async (child) => {
+        const transformed = await nodeTransformer.transformNode(child);
+        return Array.isArray(transformed) ? transformed : [transformed];
+      })
+    );
+    return [pluginANode, ...processedChildren.flat()];
+  }
+}
 
-  const processedChildren = await Promise.all(
-    children.map(async (child) => await createNodeTransformer(createChildContext({ sharedValue: 'test' }))
-      .transformNode(child))
-  );
+class PluginBPlugin extends ElementPlugin {
+  async transform(
+    props: Record<string, any>,
+    children: Node[],
+    context: PluginContext
+  ): Promise<Node[] | Node> {
+    const { createNodeTransformer, scope } = context;
+    const sharedValue = scope.get("sharedValue");
+    const pluginBNode = {
+      type: "paragraph",
+      children: [
+        {
+          type: "text",
+          value: `Shared value should be accessible: ${sharedValue}, Props should be accessible: ${props.var}`,
+        },
+      ],
+    };
+    const nodeTransformer = createNodeTransformer(scope);
+    const processedChildren = await Promise.all(
+      children.map(async (child) => {
+        const transformed = await nodeTransformer.transformNode(child);
+        return Array.isArray(transformed) ? transformed : [transformed];
+      })
+    );
+    return [pluginBNode, ...processedChildren.flat()];
+  }
+}
+ElementPluginRegistry.register(new PluginAPlugin(), ['PluginA'])
+ElementPluginRegistry.register(new PluginBPlugin(), ['PluginB'])
 
-  return [pluginANode, ...processedChildren.flat()];
-};
-const PluginB: PluginHandler = async (props, children, pluginAPI) => {
-  const { createNodeTransformer, readContextValue, createChildContext } = pluginAPI;
-  const sharedValue = readContextValue('sharedValue');
-  const pluginANode = {
-    type: 'paragraph',
-    children: [
-      {
-        type: 'text',
-        value: `Shared value should be accessible: ${sharedValue}, Props should be accessible: ${props.var}`,
-      },
-    ],
-  };
-
-  const processedChildren = await Promise.all(
-    children.map(async (child) => await createNodeTransformer(createChildContext({}))
-      .transformNode(child))
-  );
-
-  return [pluginANode, ...processedChildren.flat()];
-};
-
-registerPlugin('PluginA', PluginA);
-registerPlugin('PluginB', PluginB);
 
 test('parent-child should share context', async () => {
   const input = getInput(__dirname);

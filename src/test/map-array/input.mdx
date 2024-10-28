@@ -2,22 +2,22 @@
 
 ## List Index Items
 
-<Map arr={props.arr}>
+<ForEach arr={props.arr}>
   ### Component {index}
-</Map>
+</ForEach>
 
 ## List array items
 
-<Map arr={props.nestedArr}>
+<ForEach arr={props.nestedArr}>
   * List Item {item.num} {item.deep.name}
-</Map>
+</ForEach>
 
 ## Nested Map
 
-<Map arr={props.arr} as="outerItem">
+<ForEach arr={props.arr} as="outerItem">
   ### Outer Loop {outerItem}
 
-  <Map arr={props.nestedArr} as="innerItem">
+  <ForEach arr={props.nestedArr} as="innerItem">
     * Inner Loop: {innerItem.num}
-  </Map>
-</Map>
+  </ForEach>
+</ForEach>
