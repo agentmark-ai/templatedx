@@ -1,5 +1,11 @@
 # @puzzlet/templatedx
 
+## 0.2.0
+
+### Minor Changes
+
+- 40618f4: Filter functions, raw element
+
 ## 0.1.0
 
 ### Minor Changes
