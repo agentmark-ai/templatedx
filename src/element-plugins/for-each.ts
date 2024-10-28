@@ -31,7 +31,6 @@ export class MapPlugin extends ElementPlugin {
         })
       );
     }
-  
 
     const arr = props['arr'];
     if (!Array.isArray(arr)) {
@@ -76,6 +75,5 @@ export class MapPlugin extends ElementPlugin {
     } else {
       return resultNodes;
     }
-  
   }
 }

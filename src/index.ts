@@ -14,7 +14,7 @@ import { ElementPlugin, PluginContext } from "./element-plugin";
 import type { ExtractedField } from "./extract-fields";
 import type { ContentLoader } from "./types";
 import type { Root } from "mdast";
-import './builtin-plugins';
+import './register-builtin-plugins';
 
 export type {
   ContentLoader,
