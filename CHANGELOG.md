@@ -1,5 +1,11 @@
 # @puzzlet/templatedx
 
+## 0.1.0
+
+### Minor Changes
+
+- 98ebf7f: Conditional no longer necessary
+
 ## 0.0.3
 
 ### Patch Changes
