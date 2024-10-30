@@ -25,7 +25,7 @@ TemplateDX is a declarative, extensible & composable template engine based on Ma
 
 TemplateDX uses a straightforward, readable syntax to enhance the developer experience for those using templating engines.
 
-TemplateDX was built as the foundation for [PromptDX](https://github.com/puzzlet-ai/promptdx) is inspired by MDX.
+TemplateDX was built as the foundation for [PromptDX](https://github.com/puzzlet-ai/promptdx) and is inspired by MDX.
 
 ## Example
 
