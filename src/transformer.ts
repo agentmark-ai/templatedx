@@ -1,3 +1,9 @@
+import jsep from 'jsep';
+import jsepObject from '@jsep-plugin/object';
+import {
+  MdxJsxFlowElement,
+  MdxJsxTextElement,
+} from 'mdast-util-mdx';
 import { NODE_TYPES, MDX_JSX_ATTRIBUTE_TYPES } from './constants';
 import { OperatorFunction } from './types';
 import { ElementPluginRegistry } from './element-plugin-registry';
@@ -10,11 +16,6 @@ import {
   isParentNode,
   createBaseProcessor,
 } from './ast-utils';
-import jsep from 'jsep';
-import {
-  MdxJsxFlowElement,
-  MdxJsxTextElement,
-} from 'mdast-util-mdx';
 import type { ExtractedField } from './extract-fields';
 import extractFieldsFromAst from './extract-fields';
 import { FilterRegistry } from './filter-registry';
@@ -26,6 +27,9 @@ import type {
   RootContent,
 } from 'mdast';
 
+jsep.plugins.register(jsepObject);
+jsep.addLiteral('ArrayExpression', true);
+jsep.addLiteral('ObjectExpression', true);
 
 export const extractFields = async (
   tree: Root,
@@ -52,7 +56,6 @@ const nodeTypeHelpers = {
   isParentNode,
   NODE_TYPES,
 };
-
 
 export class NodeTransformer {
   private scope: Scope;
@@ -138,11 +141,38 @@ export class NodeTransformer {
       case 'CallExpression':
         return this.evaluateCallExpression(node as jsep.CallExpression);
 
+      case 'ArrayExpression':
+        return this.evaluateArrayExpression(node as jsep.ArrayExpression);
+
+      case 'ObjectExpression':
+        return this.evaluateObjectExpression(node as any);
+
       default:
         throw new Error(`Unsupported node type: ${node.type}`);
     }
   }
-  
+
+  evaluateArrayExpression(node: jsep.ArrayExpression): any[] {
+    return node.elements.map((element) => this.evaluateJsepExpression(element!));
+  }
+
+  evaluateObjectExpression(node: any): object {
+    const obj: Record<string, any> = {};
+    for (const property of node.properties) {
+      let key: string;
+      if (property.key.type === 'Identifier') {
+        key = property.key.name;
+      } else if (property.key.type === 'Literal') {
+        key = property.key.value;
+      } else {
+        throw new Error(`Unsupported object key type: ${property.key.type}`);
+      }
+      const value = this.evaluateJsepExpression(property.value);
+      obj[key] = value;
+    }
+    return obj;
+  }
+
   evaluateCallExpression(node: jsep.CallExpression): any {
     const callee = node.callee;
 
@@ -171,16 +201,16 @@ export class NodeTransformer {
     if (!variablePath) {
       throw new Error(`Variable path cannot be empty.`);
     }
-  
+
     const parts = variablePath.split('.');
     let value: any;
-  
+
     try {
       value = this.scope.get(parts[0]);
     } catch (error) {
       throw new Error(`Variable "${parts[0]}" is not defined in the scope.`);
     }
-  
+
     for (let i = 1; i < parts.length; i++) {
       const part = parts[i];
       if (value == null) {
@@ -191,10 +221,9 @@ export class NodeTransformer {
       // Access property safely
       value = value[part];
     }
-  
+
     return value;
   }
-  
 
   evaluateBinaryExpression(node: jsep.BinaryExpression): any {
     const operatorFunctions: { [key: string]: OperatorFunction } = {
