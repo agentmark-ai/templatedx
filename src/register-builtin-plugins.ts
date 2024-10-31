@@ -14,6 +14,7 @@ import {
   round,
   replace,
   urlencode,
+  dump,
 } from "./filter-plugins";
 
 
@@ -30,3 +31,4 @@ FilterRegistry.register("join", join);
 FilterRegistry.register("round", round);
 FilterRegistry.register("replace", replace);
 FilterRegistry.register("urlencode", urlencode);
+FilterRegistry.register("dump", dump)

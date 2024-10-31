@@ -41,3 +41,7 @@ export const urlencode = (input: string): string => {
   if (typeof input !== "string") return input;
   return encodeURIComponent(input);
 };
+
+export const dump = (input: any): string => {
+  return JSON.stringify(input);
+};
