@@ -1,1 +1,0 @@
-## Rendered basic Markdown file!
