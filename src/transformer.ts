@@ -31,24 +31,6 @@ jsep.plugins.register(jsepObject);
 jsep.addLiteral('ArrayExpression', true);
 jsep.addLiteral('ObjectExpression', true);
 
-export const extractFields = async (
-  tree: Root,
-  fieldNames: string[],
-  props?: Record<string, any>
-): Promise<ExtractedField[]> => {
-  const extractedFields: ExtractedField[] = [];
-  const processed = await transformTree(tree, props || {});
-
-  const processor = createBaseProcessor().use(extractFieldsFromAst, {
-    fields: fieldNames,
-    storage: extractedFields,
-  });
-
-  await processor.run(processed);
-
-  return extractedFields;
-};
-
 const nodeTypeHelpers = {
   isMdxJsxElement,
   isMdxJsxFlowElement,
@@ -346,9 +328,10 @@ export class NodeTransformer {
 
 export const transformTree = async (
   tree: Root,
-  props: Record<string, any> = {}
+  props: Record<string, any> = {},
+  shared: Record<string, any> = {},
 ): Promise<Root> => {
-  const scope = new Scope({ props });
+  const scope = new Scope({ props }, shared);
   const transformer = new NodeTransformer(scope);
   const processedTree = await transformer.transformNode(tree);
   return processedTree as Root;

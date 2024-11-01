@@ -1,0 +1,40 @@
+---
+id: join
+title: join
+---
+
+# `join`
+
+The `join` filter joins elements of an array into a single string, separated by a specified separator.
+
+## Syntax
+
+```template
+join(array_value, separator)
+```
+
+## Parameters
+
+- `array_value` (any[]): The input array.
+- `separator` (string, optional): The string to separate the array elements. Defaults to `", "`.
+
+## Example
+
+```template
+join(["apple", "banana", "cherry"], ", ")
+```
+
+**Output:**
+
+```
+apple, banana, cherry
+```
+
+## Source Code
+
+```tsx
+export const join = (input: any[], separator: string = ", "): string => {
+  if (!Array.isArray(input)) return input;
+  return input.join(separator);
+};
+```

@@ -1,0 +1,39 @@
+---
+id: upper
+title: upper
+---
+
+# `upper`
+
+The `upper` filter converts a string to uppercase letters.
+
+## Syntax
+
+```template
+upper(string_value)
+```
+
+## Parameters
+
+- `string_value` (string): The input string to be converted to uppercase.
+
+## Example
+
+```template
+upper("hello world")
+```
+
+**Output:**
+
+```
+HELLO WORLD
+```
+
+## Source Code
+
+```tsx
+export const upper = (input: string): string => {
+  if (typeof input !== "string") return input;
+  return input.toUpperCase();
+};
+```

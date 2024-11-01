@@ -1,7 +1,4 @@
-import {
-  transformTree,
-  extractFields
-} from "./transformer";
+import { transformTree } from "./transformer";
 import { bundleMDX } from "./bundler";
 import {
   compressAst,
@@ -11,6 +8,8 @@ import {
 } from "./ast-utils";
 import { ElementPluginRegistry } from "./element-plugin-registry";
 import { ElementPlugin, PluginContext } from "./element-plugin";
+import { FilterRegistry } from "./filter-registry";
+import type { FilterFunction } from "./filter-registry";
 import type { ExtractedField } from "./extract-fields";
 import type { ContentLoader } from "./types";
 import type { Root } from "mdast";
@@ -21,15 +20,16 @@ export type {
   Root as Ast,
   ExtractedField,
   PluginContext,
+  FilterFunction,
 };
 export {
   parseMDX,
   stringifyMDX,
   bundleMDX,
   getFrontMatter,
-  extractFields,
   compressAst,
   transformTree,
   ElementPluginRegistry,
-  ElementPlugin
+  ElementPlugin,
+  FilterRegistry
 };
