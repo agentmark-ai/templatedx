@@ -14,10 +14,7 @@ import {
   isMdxJsxFlowElement,
   isMdxJsxTextElement,
   isParentNode,
-  createBaseProcessor,
 } from './ast-utils';
-import type { ExtractedField } from './extract-fields';
-import extractFieldsFromAst from './extract-fields';
 import { FilterRegistry } from './filter-registry';
 import { Scope } from './scope';
 import type { 
