@@ -25,8 +25,6 @@ import type {
 } from 'mdast';
 
 jsep.plugins.register(jsepObject);
-jsep.addLiteral('ArrayExpression', true);
-jsep.addLiteral('ObjectExpression', true);
 
 const nodeTypeHelpers = {
   isMdxJsxElement,
