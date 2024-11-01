@@ -1,0 +1,41 @@
+---
+id: truncate
+title: truncate
+---
+
+# `truncate`
+
+The `truncate` filter truncates a string to a specified length and appends an ellipsis (`...`) if necessary.
+
+## Syntax
+
+```template
+truncate(string_value, length)
+```
+
+## Parameters
+
+- `string_value` (string): The input string to be truncated.
+- `length` (number): The maximum length of the output string.
+
+## Example
+
+```template
+truncate("The quick brown fox jumps over the lazy dog", 20)
+```
+
+**Output:**
+
+```
+The quick brown fo...
+```
+
+## Source Code
+
+```tsx
+export const truncate = (input: string, length: number): string => {
+  if (typeof input !== "string") return input;
+  if (input.length <= length) return input;
+  return input.substring(0, length) + "...";
+};
+```

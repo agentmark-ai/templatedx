@@ -1,0 +1,39 @@
+---
+id: round
+title: round
+---
+
+# `round`
+
+The `round` filter rounds a number to a specified number of decimal places.
+
+## Syntax
+
+```template
+round(number_value, decimals)
+```
+
+## Parameters
+
+- `number_value` (number): The input number to be rounded.
+- `decimals` (number, optional): The number of decimal places to round to. Defaults to `0`.
+
+## Example
+
+```template
+round(3.14159, 2)
+```
+
+**Output:**
+
+```
+3.14
+```
+
+## Source Code
+
+```tsx
+export const round = (input: number, decimals: number = 0): number => {
+  return Number(Math.round(Number(input + "e" + decimals)) + "e-" + decimals);
+};
+```

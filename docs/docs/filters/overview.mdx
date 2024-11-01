@@ -1,0 +1,40 @@
+---
+id: overview
+title: Overview
+---
+
+# Filters Overview
+
+TemplateDX provides a set of built-in filters that you can use to manipulate and transform data within your templates. Filters are functions that take an input value and return a transformed output.
+
+The available built-in filters are:
+
+- [capitalize](./capitalize)
+- [upper](./upper)
+- [lower](./lower)
+- [truncate](./truncate)
+- [abs](./abs)
+- [join](./join)
+- [round](./round)
+- [replace](./replace)
+- [urlencode](./urlencode)
+- [dump](./dump)
+
+## Creating Custom Filters
+
+To create a custom filter in TemplateDX, define a filter function, register it, and apply it in your templates. For example, to create a `reverse` filter:
+
+```tsx
+reverse("Hello, TemplateDX!")
+```
+
+```tsx
+import { FilterRegistry } from "@puzzlet/templatedx";
+
+export const reverse = (input: string): string => {
+  if (typeof input !== "string") return input;
+  return input.split('').reverse().join('');
+};
+
+FilterRegistry.register("reverse", reverse);
+```
