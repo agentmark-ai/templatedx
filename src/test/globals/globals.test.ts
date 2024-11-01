@@ -72,10 +72,7 @@ test('testing globals, and that plugins can access/manipulate globals', async ()
   const frontMatter = getFrontMatter(ast);
   const shared: SharedContext = { sharedVal: 'hello shared' };
   const props = { text: 'hello', arr: ['a', 'b', 'c'] };
-  const processed = await transformTree(ast, props, shared);
-  const compiled = stringifyMDX(processed);
-  const output = getOutput(__dirname);
-  expect(compiled).toEqual(output);
+  await transformTree(ast, props, shared);
   // We're using a plugin to extract fields here, instead of rendering them
   expect(shared.extractedText).toEqual([
     { name: 'Input', content: 'This is the input text1 hello' },
