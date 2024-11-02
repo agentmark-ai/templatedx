@@ -1,4 +1,4 @@
-import { Node } from "mdast";
+import { Node, Root } from "mdast";
 import type { Scope } from "./scope";
 import { NODE_TYPES } from "./constants";
 
@@ -7,11 +7,12 @@ interface NodeTypeHelpers {
   isMdxJsxFlowElement(node: Node): boolean;
   isMdxJsxTextElement(node: Node): boolean;
   isParentNode(node: Node): boolean;
+  toMarkdown(node: Root): string;
   NODE_TYPES: typeof NODE_TYPES;
 }
 
 export interface PluginContext {
-  nodeTypeHelpers: NodeTypeHelpers;
+  nodeHelpers: NodeTypeHelpers;
   createNodeTransformer: (scope: Scope) => any;
   scope: Scope;
   elementName: string;

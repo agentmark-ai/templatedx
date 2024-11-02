@@ -1,9 +1,7 @@
-import { getInput, getOutput } from "../helpers";
+import { getInput } from "../helpers";
 import { expect, test } from 'vitest'
-import { getFrontMatter, parseMDX, ElementPlugin, PluginContext, transformTree, stringifyMDX, ElementPluginRegistry } from "../../index";
-import { Node, Root } from 'mdast';
-import { mdxToMarkdown } from "mdast-util-mdx";
-import { toMarkdown, Options } from 'mdast-util-to-markdown';
+import { getFrontMatter, parseMDX, ElementPlugin, PluginContext, transformTree, ElementPluginRegistry } from "../../index";
+import { Node } from 'mdast';
 
 type ExtractedField = {
   name: string;
@@ -17,25 +15,12 @@ type SharedContext = {
 
 
 class ExtractTextPlugin extends ElementPlugin {
-  serializeNodesToText(nodes: Node[]): string {
-    const rootNode: Root = {
-      type: 'root',
-      // @ts-ignore
-      children: nodes,
-    };
-    const options: Options = {
-      extensions: [mdxToMarkdown()],
-    };
-    const textContent = toMarkdown(rootNode, options);
-    return textContent;
-  }
-
   async transform(
     _props: Record<string, any>,
     children: Node[],
     pluginContext: PluginContext
   ): Promise<Node[] | Node> {
-    const { scope, elementName, createNodeTransformer } = pluginContext;
+    const { scope, elementName, createNodeTransformer, nodeHelpers } = pluginContext;
 
     if (!elementName) {
       throw new Error('elementName must be provided in pluginContext');
@@ -50,7 +35,10 @@ class ExtractTextPlugin extends ElementPlugin {
       })
     );
     const flattenedChildren = processedChildren.flat();
-    const extractedText = this.serializeNodesToText(flattenedChildren);
+    const extractedText = nodeHelpers.toMarkdown({
+      type: 'root',
+      children: flattenedChildren
+    });
     let collectedData = scope.getShared('extractedText');
     if (!collectedData) {
       collectedData = [];
