@@ -9,7 +9,7 @@ import {
   parse,
 } from './ast-utils';
 
-export async function bundleMDX(
+export async function bundle(
   mdxContent: string,
   baseDir: string,
   contentLoader: ContentLoader
