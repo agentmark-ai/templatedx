@@ -1,5 +1,11 @@
 # @puzzlet/templatedx
 
+## 0.3.0
+
+### Minor Changes
+
+- 7f882f7: Global support
+
 ## 0.2.0
 
 ### Minor Changes
