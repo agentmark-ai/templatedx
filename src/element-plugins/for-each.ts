@@ -7,8 +7,8 @@ export class MapPlugin extends ElementPlugin {
     children: Node[],
     context: PluginContext
   ): Promise<Node[] | Node> {
-    const { scope, createNodeTransformer, nodeTypeHelpers } = context;
-    const { NODE_TYPES } = nodeTypeHelpers;
+    const { scope, createNodeTransformer, nodeHelpers } = context;
+    const { NODE_TYPES } = nodeHelpers;
     function areAllListItems(resultNodesPerItem: Node[][]): boolean {
       return resultNodesPerItem.every((processedNodes) =>
         processedNodes.every(

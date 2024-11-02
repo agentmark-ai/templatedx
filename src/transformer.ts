@@ -23,14 +23,24 @@ import type {
   Parent, 
   RootContent,
 } from 'mdast';
+import { mdxToMarkdown } from "mdast-util-mdx";
+import { toMarkdown, Options } from 'mdast-util-to-markdown';
 
 jsep.plugins.register(jsepObject);
 
-const nodeTypeHelpers = {
+const options: Options = {
+  extensions: [mdxToMarkdown()],
+};
+const toMdxMarkdown = (node: Root) => {
+  return toMarkdown(node, options);
+}
+
+const nodeHelpers = {
   isMdxJsxElement,
   isMdxJsxFlowElement,
   isMdxJsxTextElement,
   isParentNode,
+  toMarkdown: toMdxMarkdown,
   NODE_TYPES,
 };
 
@@ -269,7 +279,7 @@ export class NodeTransformer {
           createNodeTransformer: (scope: Scope) => new NodeTransformer(scope),
           scope: this.scope,
           elementName,
-          nodeTypeHelpers,
+          nodeHelpers,
         };
         const result = await plugin.transform(props, node.children, pluginContext);
         return result;

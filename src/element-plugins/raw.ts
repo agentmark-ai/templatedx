@@ -1,23 +1,17 @@
 import { Node, Root } from "mdast";
-import { ElementPlugin } from "../element-plugin";
-import { toMarkdown, Options } from "mdast-util-to-markdown";
-import { mdxToMarkdown } from "mdast-util-mdx";
+import { ElementPlugin, PluginContext } from "../element-plugin";
 
 export class RawPlugin extends ElementPlugin {
   async transform(
     _props: Record<string, any>,
     children: Node[],
+    context: PluginContext
   ): Promise<Node[] | Node> {
-    const toMarkdownOptions: Options = {
-      extensions: [mdxToMarkdown()],
-    };
-    const rawContent = toMarkdown(
-      {
+    const { nodeHelpers } = context;
+    const rawContent = nodeHelpers.toMarkdown({
         type: 'root',
         children: children,
-      } as Root,
-      toMarkdownOptions
-    );
+    } as Root);
     return [
       {
         type: 'text',
