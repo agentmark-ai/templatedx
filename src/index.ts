@@ -1,5 +1,5 @@
 import { transformTree } from "./transformer";
-import { bundleMDX } from "./bundler";
+import { bundle } from "./bundler";
 import {
   compressAst,
   stringify,
@@ -23,7 +23,7 @@ export type {
 export {
   parse,
   stringify,
-  bundleMDX,
+  bundle,
   getFrontMatter,
   compressAst,
   transformTree,

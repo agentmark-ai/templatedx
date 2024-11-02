@@ -1,12 +1,12 @@
 import fs from 'fs';
 import { getInput } from "../helpers";
 import { expect, test } from 'vitest'
-import { bundleMDX, ContentLoader, stringify, compressAst } from "../../index";
+import { bundle, ContentLoader, stringify, compressAst } from "../../index";
 
 test('compresses an ast', async () => {
   const input = getInput(__dirname);
   const loader: ContentLoader = async path => fs.readFileSync(path, 'utf-8');
-  const bundled = await bundleMDX(input, __dirname, loader);
+  const bundled = await bundle(input, __dirname, loader);
   // Cloning, because compressing mutates the tree.
   const uncompressedAst = structuredClone(bundled);
   compressAst(bundled);
