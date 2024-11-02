@@ -1,7 +1,7 @@
 import fs from 'fs';
 import { getInput } from "../helpers";
 import { expect, test } from 'vitest'
-import { bundleMDX, ContentLoader, stringifyMDX, compressAst } from "../../index";
+import { bundleMDX, ContentLoader, stringify, compressAst } from "../../index";
 
 test('compresses an ast', async () => {
   const input = getInput(__dirname);
@@ -11,7 +11,7 @@ test('compresses an ast', async () => {
   const uncompressedAst = structuredClone(bundled);
   compressAst(bundled);
   expect(bundled).toMatchFileSnapshot('./node.json');
-  const compressed = await stringifyMDX(bundled);
-  const uncompressed = await stringifyMDX(uncompressedAst);
+  const compressed = await stringify(bundled);
+  const uncompressed = await stringify(uncompressedAst);
   expect(compressed).toEqual(uncompressed);
 });

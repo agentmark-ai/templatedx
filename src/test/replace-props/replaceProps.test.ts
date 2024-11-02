@@ -1,6 +1,6 @@
 import { getInput, getOutput } from "../helpers";
 import { expect, test } from 'vitest'
-import { stringifyMDX, parseMDX, transformTree } from "../../index";
+import { stringify, parse, transformTree } from "../../index";
 
 const props = {
   name1: 'Steve',
@@ -19,9 +19,9 @@ const props = {
 
 test('replaces props', async () => {
   const input = getInput(__dirname);
-  const tree = parseMDX(input);
+  const tree = parse(input);
   const processed = await transformTree(tree, props);
-  const compiled = stringifyMDX(processed);
+  const compiled = stringify(processed);
   const output = getOutput(__dirname);
   expect(compiled).toEqual(output);
 });

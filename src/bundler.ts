@@ -6,7 +6,7 @@ import type { ComponentASTs, ContentLoader } from './types';
 import {
   isMdxJsxElement,
   isParentNode,
-  parseMDX,
+  parse,
 } from './ast-utils';
 
 export async function bundleMDX(
@@ -49,7 +49,7 @@ async function processMdxContent(
 
   callStack.add(absolutePath);
 
-  const tree = parseMDX(content);
+  const tree = parse(content);
   const imports = extractImports(tree, absolutePath);
   const componentASTs: ComponentASTs = {};
 

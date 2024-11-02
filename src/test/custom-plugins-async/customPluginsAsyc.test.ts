@@ -1,6 +1,6 @@
 import { getInput, getOutput } from "../helpers";
 import { expect, test } from 'vitest'
-import { parseMDX, stringifyMDX, ElementPluginRegistry, transformTree } from "../../index";
+import { parse, stringify, ElementPluginRegistry, transformTree } from "../../index";
 import { Node } from "mdast";
 import { ElementPlugin } from "../../index";
 import type { PluginContext } from "../../index";
@@ -36,9 +36,9 @@ ElementPluginRegistry.register(new FetchDataPlugin(), ['FetchData']);
 
 test('async plugins should work', async () => {
   const input = getInput(__dirname);
-  const tree = parseMDX(input);
+  const tree = parse(input);
   const processed = await transformTree(tree);
-  const compiled = stringifyMDX(processed);
+  const compiled = stringify(processed);
   const output = getOutput(__dirname);
   expect(compiled).toEqual(output);
 });
