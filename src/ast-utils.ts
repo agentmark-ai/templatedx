@@ -86,12 +86,12 @@ export const getFrontMatter = (tree: Root) => {
   return yaml.load(frontmatterNode?.value || '');
 };
 
-export function parseMDX(mdxContent: string): Root {
+export function parse(mdxContent: string): Root {
   const processor = unified().use(remarkParse).use(remarkMdx).use(remarkFrontmatter);
   return processor.parse(mdxContent) as Root;
 }
 
-export const stringifyMDX = (tree: Root): string => {
+export const stringify = (tree: Root): string => {
   const processor = createBaseProcessor().use(remarkStringify);
   return String(processor.stringify(tree));
 };

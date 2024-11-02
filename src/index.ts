@@ -2,8 +2,8 @@ import { transformTree } from "./transformer";
 import { bundleMDX } from "./bundler";
 import {
   compressAst,
-  stringifyMDX,
-  parseMDX,
+  stringify,
+  parse,
   getFrontMatter,
 } from "./ast-utils";
 import { ElementPluginRegistry } from "./element-plugin-registry";
@@ -21,8 +21,8 @@ export type {
   FilterFunction,
 };
 export {
-  parseMDX,
-  stringifyMDX,
+  parse,
+  stringify,
   bundleMDX,
   getFrontMatter,
   compressAst,

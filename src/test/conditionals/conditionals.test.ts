@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { stringifyMDX, parseMDX, transformTree } from "../../index";
+import { stringify, parse, transformTree } from "../../index";
 
 const input = `
 <If condition={props.isVisible}>
@@ -19,9 +19,9 @@ const input = `
 </Else>`;
 
 const compile = async (props: any) => {
-  const tree = parseMDX(input);
+  const tree = parse(input);
   const processed = await transformTree(tree, props);
-  const result = stringifyMDX(processed);
+  const result = stringify(processed);
   return result;
 }
 test('handles conditionals', async () => {

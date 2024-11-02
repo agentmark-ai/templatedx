@@ -1,6 +1,6 @@
 import { getInput, getOutput } from "../helpers";
 import { expect, test } from 'vitest'
-import { parseMDX, stringifyMDX, transformTree, ElementPlugin, PluginContext, ElementPluginRegistry } from "../../index";
+import { parse, stringify, transformTree, ElementPlugin, PluginContext, ElementPluginRegistry } from "../../index";
 import { Node } from "mdast";
 
 class PluginAPlugin extends ElementPlugin {
@@ -64,9 +64,9 @@ ElementPluginRegistry.register(new PluginBPlugin(), ['PluginB'])
 
 test('parent-child should share context', async () => {
   const input = getInput(__dirname);
-  const tree = parseMDX(input);
+  const tree = parse(input);
   const processed = await transformTree(tree);
-  const compiled = stringifyMDX(processed);
+  const compiled = stringify(processed);
   const output = getOutput(__dirname);
   expect(compiled).toEqual(output);
 });

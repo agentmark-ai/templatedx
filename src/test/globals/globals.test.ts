@@ -1,6 +1,6 @@
 import { getInput } from "../helpers";
 import { expect, test } from 'vitest'
-import { getFrontMatter, parseMDX, ElementPlugin, PluginContext, transformTree, ElementPluginRegistry } from "../../index";
+import { getFrontMatter, parse, ElementPlugin, PluginContext, transformTree, ElementPluginRegistry } from "../../index";
 import { Node } from 'mdast';
 
 type ExtractedField = {
@@ -56,7 +56,7 @@ ElementPluginRegistry.register(new ExtractTextPlugin(), ['Input', 'Other']);
 
 test('testing globals, and that plugins can access/manipulate globals', async () => {
   const input = getInput(__dirname);
-  const ast = parseMDX(input);
+  const ast = parse(input);
   const frontMatter = getFrontMatter(ast);
   const shared: SharedContext = { sharedVal: 'hello shared' };
   const props = { text: 'hello', arr: ['a', 'b', 'c'] };
