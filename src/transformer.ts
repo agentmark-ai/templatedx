@@ -8,6 +8,7 @@ import { NODE_TYPES, MDX_JSX_ATTRIBUTE_TYPES } from './constants';
 import { OperatorFunction } from './types';
 import { ElementPluginRegistry } from './element-plugin-registry';
 import { PluginContext } from './element-plugin';
+import { hasFunctionBody, getFunctionBody } from './ast-utils';
 import { stringifyValue } from './utils';
 import {
   isMdxJsxElement,
@@ -41,6 +42,8 @@ const nodeHelpers = {
   isMdxJsxTextElement,
   isParentNode,
   toMarkdown: toMdxMarkdown,
+  hasFunctionBody,
+  getFunctionBody,
   NODE_TYPES,
 };
 
@@ -184,24 +187,17 @@ export class NodeTransformer {
 
   evaluateCallExpression(node: jsep.CallExpression): any {
     const callee = node.callee;
-
-    // Ensure the callee is an identifier (function name)
     if (callee.type !== 'Identifier') {
       throw new Error(`Only calls to registered filters are allowed.`);
     }
 
     const functionName = (callee as jsep.Identifier).name;
-
-    // Retrieve the filter function from the FilterRegistry
     const filterFunction = FilterRegistry.get(functionName);
     if (!filterFunction) {
       throw new Error(`Filter "${functionName}" is not registered.`);
     }
 
-    // Evaluate arguments
     const args = node.arguments.map(arg => this.evaluateJsepExpression(arg));
-
-    // Apply the filter function
     const [input, ...rest] = args;
     return filterFunction(input, ...rest);
   }
@@ -227,7 +223,6 @@ export class NodeTransformer {
           `Cannot access property "${part}" of null or undefined in "${variablePath}".`
         );
       }
-      // Access property safely
       value = value[part];
     }
 
