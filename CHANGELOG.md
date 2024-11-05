@@ -1,5 +1,11 @@
 # @puzzlet/templatedx
 
+## 0.5.0
+
+### Minor Changes
+
+- 9ccf1f3: Support type safety. Comment stripping. Child Function Props.
+
 ## 0.4.2
 
 ### Patch Changes
