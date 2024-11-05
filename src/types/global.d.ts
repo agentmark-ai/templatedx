@@ -15,8 +15,9 @@ declare global {
   interface MessageItem {
     role: 'user' | 'assistant';
     message: string;
-    // Add other properties if necessary
   }
+
+  const capitalize: Filters['capitalize'];
 }
 
-export {}; // Ensures this file is treated as a module
+export {};

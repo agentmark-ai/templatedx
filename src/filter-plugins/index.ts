@@ -1,3 +1,16 @@
+export interface Filters {
+  capitalize(input: string): string;
+  upper(input: string): string;
+  lower(input: string): string;
+  truncate(input: string, length: number): string;
+  abs(input: number): number;
+  join(input: any[], separator?: string): string;
+  round(input: number, decimals?: number): number;
+  replace(input: string, search: string, replace: string): string;
+  urlencode(input: string): string;
+  dump(input: any): string;
+}
+
 export const capitalize = (input: string): string => {
   if (typeof input !== "string") return input;
   return input.charAt(0).toUpperCase() + input.slice(1);
