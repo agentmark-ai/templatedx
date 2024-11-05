@@ -63,6 +63,18 @@ export class NodeTransformer {
       return await this.processMdxJsxElement(node);
     }
 
+    if (this.isFragmentNode(node)) {
+      const processedChildren = await Promise.all(
+        (node as Parent).children.map(async (child) => {
+          const childTransformer = new NodeTransformer(this.scope);
+          const result = await childTransformer.transformNode(child);
+          return Array.isArray(result) ? result : [result];
+        })
+      );
+
+      return processedChildren.flat();
+    }
+
     if (isParentNode(node)) {
       const newNode = { ...node } as Parent;
 
@@ -80,6 +92,16 @@ export class NodeTransformer {
     }
 
     return node;
+  }
+
+  private isFragmentNode(node: Node): boolean {
+    return (
+      isMdxJsxElement(node) &&
+      (node.name === null ||
+        node.name === '' ||
+        node.name === 'Fragment' ||
+        node.name === 'React.Fragment')
+    );
   }
 
   evaluateExpressionNode(node: Node): Node {

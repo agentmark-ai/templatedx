@@ -3,21 +3,36 @@
 ## List Index Items
 
 <ForEach arr={props.arr}>
-  ### Component {index}
+  {(item) => (
+    <>
+      ### Component {index}
+    </>
+  )}
 </ForEach>
 
 ## List array items
 
 <ForEach arr={props.nestedArr}>
-  * List Item {item.num} {item.deep.name}
+  {(item) => (
+    <>
+      * List Item {item.num} {item.deep.name}
+    </>
+  )}
 </ForEach>
 
 ## Nested Map
 
-<ForEach arr={props.arr} as="outerItem">
-  ### Outer Loop {outerItem}
-
-  <ForEach arr={props.nestedArr} as="innerItem">
-    * Inner Loop: {innerItem.num}
-  </ForEach>
+<ForEach arr={props.arr}>
+  {(outerItem) => (
+    <>
+      ### Outer Loop {outerItem}
+      <ForEach arr={props.nestedArr} as="innerItem">
+        {(innerItem) => (
+          <>
+            * Inner Loop: {innerItem.num}
+          </>
+        )}
+      </ForEach>
+    </>
+  )}
 </ForEach>

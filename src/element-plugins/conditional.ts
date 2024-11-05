@@ -1,6 +1,22 @@
 import { Node } from "mdast";
 import { ElementPlugin, PluginContext } from "../element-plugin";
 
+export interface IfProps {
+  condition: boolean;
+  children: any;
+}
+
+export interface ElseIfProps {
+  condition: boolean;
+  children: any;
+}
+
+export interface ElseProps {
+  children: any;
+}
+
+export const Tags = ['If', 'ElseIf', 'Else'];
+
 export class ConditionalPlugin extends ElementPlugin {
   async transform(
     props: Record<string, any>,

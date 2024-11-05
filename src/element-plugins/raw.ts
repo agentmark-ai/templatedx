@@ -1,6 +1,12 @@
 import { Node, Root } from "mdast";
 import { ElementPlugin, PluginContext } from "../element-plugin";
 
+export interface RawProps {
+  children: any;
+}
+
+export const Tags = ['Raw'];
+
 export class RawPlugin extends ElementPlugin {
   async transform(
     _props: Record<string, any>,
