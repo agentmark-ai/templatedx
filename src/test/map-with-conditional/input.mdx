@@ -12,3 +12,13 @@
     </>
   )}
 </ForEach>
+
+# User Only Loop
+
+<ForEach arr={props.messageHistory}>
+  {(item) => (
+    <If condition={item.role == 'user'}>
+      user: {item.message}
+    </If>
+  )}
+</ForEach>
