@@ -9,6 +9,7 @@ export const NODE_TYPES = {
   LIST_ITEM: 'listItem',
   TEXT: 'text',
   PARAGRAPH: 'paragraph',
+  HTML: 'html',
 } as const;
 
 export const MDX_JSX_ATTRIBUTE_TYPES = {
