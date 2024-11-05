@@ -1,9 +1,9 @@
 import { getInput, getOutput } from "../helpers";
 import { expect, test } from 'vitest'
-import { parse, stringify, transformTree, ElementPlugin, PluginContext, ElementPluginRegistry } from "../../index";
+import { parse, stringify, transformTree, ComponentPlugin, PluginContext, ComponentPluginRegistry } from "../../index";
 import { Node } from "mdast";
 
-class PluginAPlugin extends ElementPlugin {
+class PluginAPlugin extends ComponentPlugin {
   async transform(
     _props: Record<string, any>,
     children: Node[],
@@ -31,7 +31,7 @@ class PluginAPlugin extends ElementPlugin {
   }
 }
 
-class PluginBPlugin extends ElementPlugin {
+class PluginBPlugin extends ComponentPlugin {
   async transform(
     props: Record<string, any>,
     children: Node[],
@@ -58,8 +58,8 @@ class PluginBPlugin extends ElementPlugin {
     return [pluginBNode, ...processedChildren.flat()];
   }
 }
-ElementPluginRegistry.register(new PluginAPlugin(), ['PluginA'])
-ElementPluginRegistry.register(new PluginBPlugin(), ['PluginB'])
+ComponentPluginRegistry.register(new PluginAPlugin(), ['PluginA'])
+ComponentPluginRegistry.register(new PluginBPlugin(), ['PluginB'])
 
 
 test('parent-child should share context', async () => {

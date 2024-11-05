@@ -1,6 +1,6 @@
 import { getInput } from "../helpers";
 import { expect, test } from 'vitest'
-import { getFrontMatter, parse, ElementPlugin, PluginContext, transformTree, ElementPluginRegistry } from "../../index";
+import { getFrontMatter, parse, ComponentPlugin, PluginContext, transformTree, ComponentPluginRegistry } from "../../index";
 import { Node } from 'mdast';
 
 type ExtractedField = {
@@ -14,16 +14,16 @@ type SharedContext = {
 }
 
 
-class ExtractTextPlugin extends ElementPlugin {
+class ExtractTextPlugin extends ComponentPlugin {
   async transform(
     _props: Record<string, any>,
     children: Node[],
     pluginContext: PluginContext
   ): Promise<Node[] | Node> {
-    const { scope, elementName, createNodeTransformer, nodeHelpers } = pluginContext;
+    const { scope, componentName, createNodeTransformer, nodeHelpers } = pluginContext;
 
-    if (!elementName) {
-      throw new Error('elementName must be provided in pluginContext');
+    if (!componentName) {
+      throw new Error('componentName must be provided in pluginContext');
     }
 
     const childScope = scope.createChild();
@@ -37,6 +37,7 @@ class ExtractTextPlugin extends ElementPlugin {
     const flattenedChildren = processedChildren.flat();
     const extractedText = nodeHelpers.toMarkdown({
       type: 'root',
+      // @ts-ignore
       children: flattenedChildren
     });
     let collectedData = scope.getShared('extractedText');
@@ -45,14 +46,14 @@ class ExtractTextPlugin extends ElementPlugin {
       scope.setShared('extractedText', collectedData);
     }
     collectedData.push({
-      name: elementName,
+      name: componentName,
       content: extractedText.trim(),
     });
     return [];
   }
 }
 
-ElementPluginRegistry.register(new ExtractTextPlugin(), ['Input', 'Other']);
+ComponentPluginRegistry.register(new ExtractTextPlugin(), ['Input', 'Other']);
 
 test('testing globals, and that plugins can access/manipulate globals', async () => {
   const input = getInput(__dirname);

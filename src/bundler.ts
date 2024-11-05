@@ -3,6 +3,7 @@ import { getDirname, resolvePath, cloneObject } from './utils';
 import { visit } from 'unist-util-visit';
 import type { Root, RootContent, Paragraph, Parent, Node } from 'mdast';
 import type { ComponentASTs, ContentLoader } from './types';
+import { SKIP } from 'unist-util-visit';
 import {
   isMdxJsxElement,
   isParentNode,
@@ -50,6 +51,7 @@ async function processMdxContent(
   callStack.add(absolutePath);
 
   const tree = parse(content);
+  removeComments(tree);
   const imports = extractImports(tree, absolutePath);
   const componentASTs: ComponentASTs = {};
 
@@ -77,6 +79,29 @@ async function processMdxContent(
   callStack.delete(absolutePath);
 
   return { tree, componentASTs };
+}
+
+function removeComments(tree: Root): void {
+  visit(tree, (node, index, parent) => {
+    if (isCommentNode(node) && parent) {
+      parent.children.splice(index!, 1);
+      return [SKIP, index];
+    }
+  });
+}
+
+function isCommentNode(node: Node): boolean {
+  if (
+    node.type === NODE_TYPES.MDX_FLOW_EXPRESSION ||
+    node.type === NODE_TYPES.MDX_TEXT_EXPRESSION
+  ) {
+    const value = (node as any).value.trim();
+    return (
+      (value.startsWith('/*') && value.endsWith('*/')) ||
+      value.startsWith('//')
+    );
+  }
+  return false;
 }
 
 function extractImports(tree: Root, absolutePath: string): Record<string, string> {

@@ -6,12 +6,13 @@ import {
   parse,
   getFrontMatter,
 } from "./ast-utils";
-import { ElementPluginRegistry } from "./element-plugin-registry";
-import { ElementPlugin, PluginContext } from "./element-plugin";
+import { ComponentPluginRegistry } from "./component-plugin-registry";
+import { ComponentPlugin, PluginContext } from "./component-plugin";
 import { FilterRegistry } from "./filter-registry";
 import type { FilterFunction } from "./filter-registry";
 import type { ContentLoader } from "./types";
 import type { Root } from "mdast";
+import type TemplateDX from './types/global';
 import './register-builtin-plugins';
 
 export type {
@@ -19,6 +20,7 @@ export type {
   Root as Ast,
   PluginContext,
   FilterFunction,
+  TemplateDX
 };
 export {
   parse,
@@ -27,7 +29,7 @@ export {
   getFrontMatter,
   compressAst,
   transformTree,
-  ElementPluginRegistry,
-  ElementPlugin,
+  ComponentPluginRegistry,
+  ComponentPlugin,
   FilterRegistry
 };

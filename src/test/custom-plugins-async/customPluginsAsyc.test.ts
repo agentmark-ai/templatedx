@@ -1,15 +1,15 @@
 import { getInput, getOutput } from "../helpers";
 import { expect, test } from 'vitest'
-import { parse, stringify, ElementPluginRegistry, transformTree } from "../../index";
+import { parse, stringify, ComponentPluginRegistry, transformTree } from "../../index";
 import { Node } from "mdast";
-import { ElementPlugin } from "../../index";
+import { ComponentPlugin } from "../../index";
 import type { PluginContext } from "../../index";
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-class FetchDataPlugin extends ElementPlugin {
+class FetchDataPlugin extends ComponentPlugin {
   async transform(
     _props: Record<string, any>,
     children: Node[],
@@ -32,7 +32,7 @@ class FetchDataPlugin extends ElementPlugin {
     return processedChildren.flat();
   }
 }
-ElementPluginRegistry.register(new FetchDataPlugin(), ['FetchData']);
+ComponentPluginRegistry.register(new FetchDataPlugin(), ['FetchData']);
 
 test('async plugins should work', async () => {
   const input = getInput(__dirname);

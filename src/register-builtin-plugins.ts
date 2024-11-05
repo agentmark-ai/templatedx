@@ -1,7 +1,7 @@
-import { MapPlugin } from './element-plugins/for-each';
-import { ConditionalPlugin } from './element-plugins/conditional';
-import { RawPlugin } from './element-plugins/raw';
-import { ElementPluginRegistry } from './element-plugin-registry';
+import { ForEachPlugin, Tags as ForEachTags } from './components-plugins/for-each';
+import { ConditionalPlugin, Tags as ConditionalTags } from './components-plugins/conditional';
+import { RawPlugin, Tags as RawTags } from './components-plugins/raw';
+import { ComponentPluginRegistry } from './component-plugin-registry';
 
 import { FilterRegistry } from "./filter-registry";
 import {
@@ -18,9 +18,9 @@ import {
 } from "./filter-plugins";
 
 
-ElementPluginRegistry.register(new MapPlugin(), ['ForEach']);
-ElementPluginRegistry.register(new ConditionalPlugin(), ['If', 'ElseIf', 'Else']);
-ElementPluginRegistry.register(new RawPlugin(), ['Raw']);
+ComponentPluginRegistry.register(new ForEachPlugin(), ForEachTags);
+ComponentPluginRegistry.register(new ConditionalPlugin(), ConditionalTags);
+ComponentPluginRegistry.register(new RawPlugin(), RawTags);
 
 FilterRegistry.register("capitalize", capitalize);
 FilterRegistry.register("upper", upper);

@@ -6,8 +6,9 @@ import {
 } from 'mdast-util-mdx';
 import { NODE_TYPES, MDX_JSX_ATTRIBUTE_TYPES } from './constants';
 import { OperatorFunction } from './types';
-import { ElementPluginRegistry } from './element-plugin-registry';
-import { PluginContext } from './element-plugin';
+import { ComponentPluginRegistry } from './component-plugin-registry';
+import { PluginContext } from './component-plugin';
+import { hasFunctionBody, getFunctionBody } from './ast-utils';
 import { stringifyValue } from './utils';
 import {
   isMdxJsxElement,
@@ -41,6 +42,8 @@ const nodeHelpers = {
   isMdxJsxTextElement,
   isParentNode,
   toMarkdown: toMdxMarkdown,
+  hasFunctionBody,
+  getFunctionBody,
   NODE_TYPES,
 };
 
@@ -63,6 +66,18 @@ export class NodeTransformer {
       return await this.processMdxJsxElement(node);
     }
 
+    if (this.isFragmentNode(node)) {
+      const processedChildren = await Promise.all(
+        (node as Parent).children.map(async (child) => {
+          const childTransformer = new NodeTransformer(this.scope);
+          const result = await childTransformer.transformNode(child);
+          return Array.isArray(result) ? result : [result];
+        })
+      );
+
+      return processedChildren.flat();
+    }
+
     if (isParentNode(node)) {
       const newNode = { ...node } as Parent;
 
@@ -80,6 +95,16 @@ export class NodeTransformer {
     }
 
     return node;
+  }
+
+  private isFragmentNode(node: Node): boolean {
+    return (
+      isMdxJsxElement(node) &&
+      (node.name === null ||
+        node.name === '' ||
+        node.name === 'Fragment' ||
+        node.name === 'React.Fragment')
+    );
   }
 
   evaluateExpressionNode(node: Node): Node {
@@ -162,24 +187,17 @@ export class NodeTransformer {
 
   evaluateCallExpression(node: jsep.CallExpression): any {
     const callee = node.callee;
-
-    // Ensure the callee is an identifier (function name)
     if (callee.type !== 'Identifier') {
       throw new Error(`Only calls to registered filters are allowed.`);
     }
 
     const functionName = (callee as jsep.Identifier).name;
-
-    // Retrieve the filter function from the FilterRegistry
     const filterFunction = FilterRegistry.get(functionName);
     if (!filterFunction) {
       throw new Error(`Filter "${functionName}" is not registered.`);
     }
 
-    // Evaluate arguments
     const args = node.arguments.map(arg => this.evaluateJsepExpression(arg));
-
-    // Apply the filter function
     const [input, ...rest] = args;
     return filterFunction(input, ...rest);
   }
@@ -205,7 +223,6 @@ export class NodeTransformer {
           `Cannot access property "${part}" of null or undefined in "${variablePath}".`
         );
       }
-      // Access property safely
       value = value[part];
     }
 
@@ -271,14 +288,14 @@ export class NodeTransformer {
     node: MdxJsxFlowElement | MdxJsxTextElement
   ): Promise<Node | Node[]> {
     try {
-      const elementName = node.name!;
-      const plugin = ElementPluginRegistry.getPlugin(elementName);
+      const componentName = node.name!;
+      const plugin = ComponentPluginRegistry.get(componentName);
       if (plugin) {
         const props = this.evaluateProps(node);
         const pluginContext: PluginContext = {
           createNodeTransformer: (scope: Scope) => new NodeTransformer(scope),
           scope: this.scope,
-          elementName,
+          componentName,
           nodeHelpers,
         };
         const result = await plugin.transform(props, node.children, pluginContext);

@@ -1,14 +1,27 @@
-import { Node, Parent } from "mdast";
-import { ElementPlugin, PluginContext } from "../element-plugin";
+import { Node, Parent } from 'mdast';
+import { ComponentPlugin, PluginContext } from '../component-plugin';
 
-export class MapPlugin extends ElementPlugin {
+export const Tags = ['ForEach'];
+
+export interface ForEachProps<T = any> {
+  children: (item: T, index: number) => any;
+  arr: Array<T>;
+}
+
+export class ForEachPlugin extends ComponentPlugin {
   async transform(
     props: Record<string, any>,
     children: Node[],
     context: PluginContext
   ): Promise<Node[] | Node> {
-    const { scope, createNodeTransformer, nodeHelpers } = context;
-    const { NODE_TYPES } = nodeHelpers;
+    const {
+      scope,
+      createNodeTransformer,
+      nodeHelpers
+    } = context;
+
+    const { hasFunctionBody, getFunctionBody, NODE_TYPES } = nodeHelpers;
+
     function areAllListItems(resultNodesPerItem: Node[][]): boolean {
       return resultNodesPerItem.every((processedNodes) =>
         processedNodes.every(
@@ -17,7 +30,7 @@ export class MapPlugin extends ElementPlugin {
         )
       );
     }
-  
+
     function collectListItems(resultNodesPerItem: Node[][]): Node[] {
       return resultNodesPerItem.flatMap((processedNodes) =>
         processedNodes.flatMap((n: Node) => {
@@ -32,36 +45,38 @@ export class MapPlugin extends ElementPlugin {
       );
     }
 
+
+    if (children.length !== 1) {
+      throw new Error(`ForEach expects exactly one child function.`);
+    }
+    const childNode = children[0];
+    if (!hasFunctionBody(childNode)) {
+      throw new Error('ForEach expects a function as its child.');
+    }
+    const { body, argumentNames } = getFunctionBody(childNode);
     const arr = props['arr'];
     if (!Array.isArray(arr)) {
       throw new Error(`The 'arr' prop for <ForEach> must be an array.`);
     }
 
-    const itemVariableName = props['as'] || 'item';
-    const indexVariableName = props['indexAs'] || 'index';
-
+    const itemParamName = argumentNames[0];
+    const indexParamName = argumentNames[1];
     const resultNodesPerItem = await Promise.all(
       arr.map(async (item: any, index: number) => {
-        const itemContext = scope.createChild(
-          {
-            [itemVariableName]: item,
-            [indexVariableName]: index,
-          }
-        );
-  
-        const itemTransformer = createNodeTransformer(itemContext);
-  
+        const itemScope = scope.createChild({
+          ...(itemParamName && { [itemParamName]: item }),
+          ...(indexParamName && { [indexParamName]: index }),
+        });
+        const itemTransformer = createNodeTransformer(itemScope);
         const processedChildren = await Promise.all(
-          children.map(async (child) => {
+          body.map(async (child) => {
             const result = await itemTransformer.transformNode(child);
             return Array.isArray(result) ? result : [result];
           })
         );
-  
         return processedChildren.flat();
       })
     );
-  
     const resultNodes = resultNodesPerItem.flat();
     if (areAllListItems(resultNodesPerItem)) {
       return [
