@@ -1,3 +1,13 @@
+{/**
+  * @typedef MessageItem
+  * @property {"user" | "assistant"} role
+  * @property {string} message
+  */}
+{/**
+  * @typedef Props
+  * @property {Array<MessageItem>} messageHistory
+  */}
+
 # Main
 
 <ForEach arr={props.messageHistory}>

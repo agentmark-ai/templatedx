@@ -1,5 +1,5 @@
 import { Node } from "mdast";
-import { ElementPlugin, PluginContext } from "../element-plugin";
+import { ComponentPlugin, PluginContext } from "../component-plugin";
 
 export interface IfProps {
   condition: boolean;
@@ -17,16 +17,16 @@ export interface ElseProps {
 
 export const Tags = ['If', 'ElseIf', 'Else'];
 
-export class ConditionalPlugin extends ElementPlugin {
+export class ConditionalPlugin extends ComponentPlugin {
   async transform(
     props: Record<string, any>,
     children: Node[],
     context: PluginContext
   ): Promise<Node[] | Node> {
-    const { scope, createNodeTransformer, elementName } = context;
+    const { scope, createNodeTransformer, componentName } = context;
 
-    if (!elementName) {
-      throw new Error("The 'elementName' must be provided in the context.");
+    if (!componentName) {
+      throw new Error("The 'componentName' must be provided in the context.");
     }
 
     let conditionMet = scope.getLocal("conditionMet");
@@ -41,20 +41,20 @@ export class ConditionalPlugin extends ElementPlugin {
 
     let shouldRender = false;
 
-    if (elementName === "If" || elementName === "ElseIf") {
+    if (componentName === "If" || componentName === "ElseIf") {
       const condition = props["condition"];
       if (typeof condition !== "boolean") {
         throw new Error(
-          `The 'condition' prop for <${elementName}> must be a boolean.`
+          `The 'condition' prop for <${componentName}> must be a boolean.`
         );
       }
       if (condition) {
         shouldRender = true;
       }
-    } else if (elementName === "Else") {
+    } else if (componentName === "Else") {
       shouldRender = true;
     } else {
-      throw new Error(`Unsupported element type: ${elementName}`);
+      throw new Error(`Unsupported element type: ${componentName}`);
     }
 
     if (shouldRender) {

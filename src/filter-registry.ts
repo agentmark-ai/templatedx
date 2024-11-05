@@ -1,21 +1,28 @@
-export type FilterFunction = (input: any, ...args: any[]) => any;
+export type FilterFunction<Input = any, Output = any, Args extends any[] = any[]> = (
+  input: Input,
+  ...args: Args
+) => Output;
 
 export class FilterRegistry {
   private static filters: Map<string, FilterFunction> = new Map();
 
-  public static register(name: string, filter: FilterFunction) {
-    this.filters.set(name, filter);
+  static register(name: string, filterFunction: FilterFunction): void {
+    this.filters.set(name, filterFunction);
   }
 
-  public static get(name: string): FilterFunction | undefined {
+  static get(name: string): FilterFunction | undefined {
     return this.filters.get(name);
   }
 
-  public static remove(name: string) {
+  static getAll(): Map<string, FilterFunction> {
+    return new Map(this.filters);
+  }
+
+  static remove(name: string): void {
     this.filters.delete(name);
   }
 
-  public static clear() {
+  static removeAll(): void {
     this.filters.clear();
   }
 }

@@ -1,9 +1,9 @@
 import { getInput, getOutput } from "../helpers";
 import { expect, test } from 'vitest'
-import { parse, ElementPlugin, PluginContext, ElementPluginRegistry, transformTree, stringify } from "../../index";
+import { parse, ComponentPlugin, PluginContext, ComponentPluginRegistry, transformTree, stringify } from "../../index";
 import { Node } from "mdast";
 
-class PluginAPlugin extends ElementPlugin {
+class PluginAPlugin extends ComponentPlugin {
   async transform(
     _props: Record<string, any>,
     children: Node[],
@@ -31,7 +31,7 @@ class PluginAPlugin extends ElementPlugin {
   }
 }
 
-class PluginBPlugin extends ElementPlugin {
+class PluginBPlugin extends ComponentPluginRegistry {
   async transform(
     props: Record<string, any>,
     children: Node[],
@@ -58,8 +58,8 @@ class PluginBPlugin extends ElementPlugin {
     return [pluginBNode, ...processedChildren.flat()];
   }
 }
-ElementPluginRegistry.register(new PluginAPlugin(), ['PluginA'])
-ElementPluginRegistry.register(new PluginBPlugin(), ['PluginB'])
+ComponentPluginRegistry.register(new PluginAPlugin(), ['PluginA'])
+ComponentPluginRegistry.register(new PluginBPlugin(), ['PluginB'])
 
 test('siblings should not share context', async () => {
   const input = getInput(__dirname);

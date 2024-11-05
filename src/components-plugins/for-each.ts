@@ -1,7 +1,14 @@
 import { Node, Parent } from 'mdast';
-import { ElementPlugin, PluginContext } from '../element-plugin';
+import { ComponentPlugin, PluginContext } from '../component-plugin';
 
-export class ForEachPlugin extends ElementPlugin {
+export const Tags = ['ForEach'];
+
+export interface ForEachProps<T = any> {
+  children: (item: T, index: number) => any;
+  arr: Array<T>;
+}
+
+export class ForEachPlugin extends ComponentPlugin {
   async transform(
     props: Record<string, any>,
     children: Node[],
