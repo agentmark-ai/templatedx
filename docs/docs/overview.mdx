@@ -8,6 +8,50 @@ TemplateDX is a declarative, extensible, and composable type-safe templating eng
 It was originally developed by Puzzlet for [PromptDX](https://github.com/puzzlet-ai/promptdx)
 to enhance the developer experience for applications built with large language models (LLMs). It is inspired by MDX.
 
+## What does it look like?
+
+TemplateDX primarily looks like what you would expect with Markdown and JSX.
+
+```jsx
+---
+name: Demo w/ FrontMatter
+author: Ryan
+---
+
+import SomeMarkdownComponent from './my-md-component.md';
+import SomeMDXComponent from './my-mdx-component.mdx';
+
+# Hello World
+
+> TemplateDX uses Markdown to make it readable.
+
+[— Markdown](https://www.markdownguide.org/basic-syntax/).
+
+
+## Table
+
+Here's a table
+
+| Item              | In Stock | Price |
+| :---------------- | :------: | ----: |
+| Python Hat        |   True   | 23.99 |
+| SQLHat            |   True   | 23.99 |
+| Codecademy Tee    |   False  | 19.99 |
+| Codecademy Hoodie |   False  | 42.99 |
+
+## Components
+
+<SomeMarkdownComponent />
+
+<SomeMDXComponent title="Demo" />
+
+## Tags
+
+<If condition={props.isAwesome}>
+  **TemplateDX Is Awesome!**
+</If>
+```
+
 ## Why extend Markdown?
 
 TemplateDX extends Markdown's familiar syntax to support complex, structured content needs. 
