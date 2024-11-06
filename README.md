@@ -12,7 +12,7 @@
 
 <p align="center">
   <a href="https://discord.gg/P2NeMDtXar">Discord</a> |
-  <a href="https://templatedx.puzzlet.ai">Docs</a> |
+  <a href="https://puzzlet-ai.github.io/templatedx">Docs</a> |
   <a href="https://github.com/puzzlet-ai/promptdx">PromptDX</a> |
   <a href="https://puzzlet.ai">Puzzlet</a>
 </p>
@@ -52,7 +52,7 @@ TemplateDX supports:
 1. Tags
 1. Expressions
 
-Read our [docs](https://templatedx.puzzlet.ai) to learn more.
+Read our [docs](https://puzzlet-ai.github.io/templatedx) to learn more.
 
 ## Contributing
 
