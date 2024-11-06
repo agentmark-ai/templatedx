@@ -4,7 +4,7 @@ module.exports = {
   title: 'TemplateDX',
   tagline: 'A declarative, extensible & composable template engine based on Markdown and JSX.',
   url: 'https://puzzlet-ai.github.io/',
-  baseUrl: '/',
+  baseUrl: '/templatedx/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.ico',
@@ -15,7 +15,7 @@ module.exports = {
       src: 'https://plausible.io/js/plausible.js',
       async: true,
       defer: true,
-      'data-domain': 'puzzlet-ai.github.io/',
+      'data-domain': 'puzzlet-ai.github.io',
     },
   ],
 
