@@ -2,7 +2,7 @@ import {themes as prismThemes} from 'prism-react-renderer';
 
 module.exports = {
   title: 'TemplateDX',
-  tagline: 'A declarative, extensible & composable template engine based on Markdown and JSX.',
+  tagline: 'The declarative, extensible & composable type-safe templating engine. Based on Markdown and JSX.',
   url: 'https://puzzlet-ai.github.io/',
   baseUrl: '/templatedx/',
   onBrokenLinks: 'throw',
@@ -35,6 +35,10 @@ module.exports = {
   ],
 
   themeConfig: {
+    colorMode: {
+      defaultMode: 'light',
+      disableSwitch: true,
+    },
     navbar: {
       title: 'TemplateDX',
       logo: {
@@ -45,11 +49,16 @@ module.exports = {
         {
           type: 'docSidebar',
           sidebarId: 'docs',
-          position: 'left',
+          position: 'right',
           label: 'Docs',
         },
         {
-          href: 'https://github.com/puzzlet-ai/templatedx',
+          label: 'Discord',
+          to: 'https://discord.gg/P2NeMDtXar',
+          position: 'right'
+        },
+        {
+          to: 'https://github.com/puzzlet-ai/templatedx',
           label: 'GitHub',
           position: 'right',
         },
@@ -64,6 +73,10 @@ module.exports = {
             {
               label: 'Getting Started',
               to: '/docs/getting-started',
+            },
+            {
+              label: 'FAQ',
+              to: '/docs/faq',
             },
           ],
         },
