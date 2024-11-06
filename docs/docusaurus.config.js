@@ -83,7 +83,7 @@ module.exports = {
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
-      additionalLanguages: ['jsx'],
+      additionalLanguages: ['jsx', 'bash'],
     },
   },
 };
