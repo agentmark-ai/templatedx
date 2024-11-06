@@ -15,7 +15,8 @@ module.exports = {
       src: 'https://plausible.io/js/plausible.js',
       async: true,
       defer: true,
-      'data-domain': 'puzzlet-ai.github.io',
+      'data-domain': 'puzzlet-ai.github.io/templatedx',
+      'data-spa': 'auto',
     },
   ],
 
