@@ -12,7 +12,7 @@ module.exports = {
   projectName: 'templatedx',
   scripts: [
     {
-      src: 'https://plausible.io/js/plausible.js',
+      src: 'https://plausible.io/js/script.outbound-links.js',
       async: true,
       defer: true,
       'data-domain': 'puzzlet-ai.github.io/templatedx',
