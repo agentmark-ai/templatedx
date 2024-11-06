@@ -3,7 +3,7 @@ import {themes as prismThemes} from 'prism-react-renderer';
 module.exports = {
   title: 'TemplateDX',
   tagline: 'A declarative, extensible & composable template engine based on Markdown and JSX.',
-  url: 'https://puzzlet-ai.github.io/templatedx/',
+  url: 'https://puzzlet-ai.github.io/',
   baseUrl: '/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
