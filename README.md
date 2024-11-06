@@ -21,7 +21,7 @@
 
 ## Overview
 
-TemplateDX is a declarative, extensible & composable template engine based on Markdown and JSX.
+TemplateDX is a declarative, extensible & composable type-safe template engine based on Markdown and JSX.
 
 TemplateDX uses a straightforward, readable syntax to enhance the developer experience for those using templating engines.
 
@@ -43,13 +43,14 @@ import Blog from './blog.mdx';
 
 TemplateDX supports:
 
+1. Type Safety
 1. Syntax Highlighting
-2. Markdown
-3. Variables
-4. Filters
-5. Components
-6. JSX Tags
-7. Expressions
+1. Markdown
+1. Variables
+1. Filters
+1. Components
+1. Tags
+1. Expressions
 
 Read our [docs](https://templatedx.puzzlet.ai) to learn more.
 
