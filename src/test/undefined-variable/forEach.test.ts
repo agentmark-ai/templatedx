@@ -5,14 +5,11 @@ import { ContentLoader } from "../../index";
 import fs from 'fs';
 
 const props = {
-  num4: 4,
-  num3: 3,
-  num5: 5,
-  a: true,
-  b: false
+  definedVar: 'defined',
+  undefinedVar: undefined,
 };
 
-test('input matches output for operators', async () => {
+test('maps over arrays', async () => {
   const input = getInput(__dirname);
   const loader: ContentLoader = async path => fs.readFileSync(path, 'utf-8');
   const tree = await parse(input, __dirname, loader);

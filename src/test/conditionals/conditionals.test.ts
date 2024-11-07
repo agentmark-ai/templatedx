@@ -1,5 +1,6 @@
 import { expect, test } from 'vitest'
-import { stringify, parse, transformTree } from "../../index";
+import { stringify, transform } from "../../index";
+import { parse } from "../../ast-utils";
 
 const input = `
 <If condition={props.isVisible}>
@@ -20,7 +21,7 @@ const input = `
 
 const compile = async (props: any) => {
   const tree = parse(input);
-  const processed = await transformTree(tree, props);
+  const processed = await transform(tree, props);
   const result = stringify(processed);
   return result;
 }

@@ -1,15 +1,16 @@
 import { getInput, getOutput } from "../helpers";
 import { expect, test } from 'vitest'
-import { parse, stringify, ComponentPluginRegistry, transformTree } from "../../index";
+import { stringify, TagPluginRegistry, transform } from "../../index";
+import { parse } from "../../ast-utils";
 import { Node } from "mdast";
-import { ComponentPlugin } from "../../index";
+import { TagPlugin } from "../../index";
 import type { PluginContext } from "../../index";
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-class FetchDataPlugin extends ComponentPlugin {
+class FetchDataPlugin extends TagPlugin {
   async transform(
     _props: Record<string, any>,
     children: Node[],
@@ -32,12 +33,12 @@ class FetchDataPlugin extends ComponentPlugin {
     return processedChildren.flat();
   }
 }
-ComponentPluginRegistry.register(new FetchDataPlugin(), ['FetchData']);
+TagPluginRegistry.register(new FetchDataPlugin(), ['FetchData']);
 
 test('async plugins should work', async () => {
   const input = getInput(__dirname);
   const tree = parse(input);
-  const processed = await transformTree(tree);
+  const processed = await transform(tree);
   const compiled = stringify(processed);
   const output = getOutput(__dirname);
   expect(compiled).toEqual(output);
