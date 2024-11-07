@@ -1,5 +1,5 @@
 import { Node, Parent } from 'mdast';
-import { ComponentPlugin, PluginContext } from '../component-plugin';
+import { TagPlugin, PluginContext } from '../tag-plugin';
 
 export const Tags = ['ForEach'];
 
@@ -8,7 +8,7 @@ export interface ForEachProps<T = any> {
   arr: Array<T>;
 }
 
-export class ForEachPlugin extends ComponentPlugin {
+export class ForEachPlugin extends TagPlugin {
   async transform(
     props: Record<string, any>,
     children: Node[],

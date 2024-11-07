@@ -1,6 +1,7 @@
 import { getInput, getOutput, print } from "../helpers";
 import { expect, test } from 'vitest'
-import { parse, stringify } from "../../index";
+import { stringify } from "../../index";
+import { parse } from "../../ast-utils";
 
 test('input matches output', () => {
   const input = getInput(__dirname);

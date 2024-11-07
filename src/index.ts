@@ -3,16 +3,15 @@ import { bundle } from "./bundler";
 import {
   compressAst,
   stringify,
-  parse,
   getFrontMatter,
 } from "./ast-utils";
-import { ComponentPluginRegistry } from "./component-plugin-registry";
-import { ComponentPlugin, PluginContext } from "./component-plugin";
+import { TagPluginRegistry } from "./tag-plugin-registry";
+import { TagPlugin, PluginContext } from "./tag-plugin";
 import { FilterRegistry } from "./filter-registry";
 import type { FilterFunction } from "./filter-registry";
 import type { ContentLoader } from "./types";
 import type { Root } from "mdast";
-import type TemplateDX from './types/global';
+import type { BaseMDXProvidedComponents } from './types/global';
 import './register-builtin-plugins';
 
 export type {
@@ -20,16 +19,15 @@ export type {
   Root as Ast,
   PluginContext,
   FilterFunction,
-  TemplateDX
+  BaseMDXProvidedComponents,
 };
 export {
-  parse,
   stringify,
-  bundle,
+  bundle as parse,
   getFrontMatter,
   compressAst,
-  transformTree,
-  ComponentPluginRegistry,
-  ComponentPlugin,
+  transformTree as transform,
+  TagPluginRegistry,
+  TagPlugin,
   FilterRegistry
 };

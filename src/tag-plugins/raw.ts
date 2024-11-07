@@ -1,5 +1,5 @@
 import { Node, Root } from "mdast";
-import { ComponentPlugin, PluginContext } from "../component-plugin";
+import { TagPlugin, PluginContext } from "../tag-plugin";
 
 export interface RawProps {
   children: any;
@@ -7,7 +7,7 @@ export interface RawProps {
 
 export const Tags = ['Raw'];
 
-export class RawPlugin extends ComponentPlugin {
+export class RawPlugin extends TagPlugin {
   async transform(
     _props: Record<string, any>,
     children: Node[],

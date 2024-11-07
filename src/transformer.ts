@@ -6,8 +6,8 @@ import {
 } from 'mdast-util-mdx';
 import { NODE_TYPES, MDX_JSX_ATTRIBUTE_TYPES } from './constants';
 import { OperatorFunction } from './types';
-import { ComponentPluginRegistry } from './component-plugin-registry';
-import { PluginContext } from './component-plugin';
+import { TagPluginRegistry } from './tag-plugin-registry';
+import { PluginContext } from './tag-plugin';
 import { hasFunctionBody, getFunctionBody } from './ast-utils';
 import { stringifyValue } from './utils';
 import {
@@ -278,9 +278,10 @@ export class NodeTransformer {
       : (node.property as jsep.Identifier).name;
 
     if (object && typeof object === 'object' && property in object) {
+      if (object[property] === undefined) return '';
       return object[property];
     } else {
-      throw new Error(`Property "${property}" not found.`);
+      return '';
     }
   }
 
@@ -288,14 +289,14 @@ export class NodeTransformer {
     node: MdxJsxFlowElement | MdxJsxTextElement
   ): Promise<Node | Node[]> {
     try {
-      const componentName = node.name!;
-      const plugin = ComponentPluginRegistry.get(componentName);
+      const tagName = node.name!;
+      const plugin = TagPluginRegistry.get(tagName);
       if (plugin) {
         const props = this.evaluateProps(node);
         const pluginContext: PluginContext = {
           createNodeTransformer: (scope: Scope) => new NodeTransformer(scope),
           scope: this.scope,
-          componentName,
+          tagName,
           nodeHelpers,
         };
         const result = await plugin.transform(props, node.children, pluginContext);

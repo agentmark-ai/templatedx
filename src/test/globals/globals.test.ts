@@ -1,6 +1,7 @@
 import { getInput } from "../helpers";
 import { expect, test } from 'vitest'
-import { getFrontMatter, parse, ComponentPlugin, PluginContext, transformTree, ComponentPluginRegistry } from "../../index";
+import { getFrontMatter, TagPlugin, PluginContext, transform, TagPluginRegistry } from "../../index";
+import { parse } from "../../ast-utils";
 import { Node } from 'mdast';
 
 type ExtractedField = {
@@ -14,16 +15,16 @@ type SharedContext = {
 }
 
 
-class ExtractTextPlugin extends ComponentPlugin {
+class ExtractTextPlugin extends TagPlugin {
   async transform(
     _props: Record<string, any>,
     children: Node[],
     pluginContext: PluginContext
   ): Promise<Node[] | Node> {
-    const { scope, componentName, createNodeTransformer, nodeHelpers } = pluginContext;
+    const { scope, tagName, createNodeTransformer, nodeHelpers } = pluginContext;
 
-    if (!componentName) {
-      throw new Error('componentName must be provided in pluginContext');
+    if (!tagName) {
+      throw new Error('tagName must be provided in pluginContext');
     }
 
     const childScope = scope.createChild();
@@ -46,14 +47,14 @@ class ExtractTextPlugin extends ComponentPlugin {
       scope.setShared('extractedText', collectedData);
     }
     collectedData.push({
-      name: componentName,
+      name: tagName,
       content: extractedText.trim(),
     });
     return [];
   }
 }
 
-ComponentPluginRegistry.register(new ExtractTextPlugin(), ['Input', 'Other']);
+TagPluginRegistry.register(new ExtractTextPlugin(), ['Input', 'Other']);
 
 test('testing globals, and that plugins can access/manipulate globals', async () => {
   const input = getInput(__dirname);
@@ -61,7 +62,7 @@ test('testing globals, and that plugins can access/manipulate globals', async ()
   const frontMatter = getFrontMatter(ast);
   const shared: SharedContext = { sharedVal: 'hello shared' };
   const props = { text: 'hello', arr: ['a', 'b', 'c'] };
-  await transformTree(ast, props, shared);
+  await transform(ast, props, shared);
   // We're using a plugin to extract fields here, instead of rendering them
   expect(shared.extractedText).toEqual([
     { name: 'Input', content: 'This is the input text1 hello' },

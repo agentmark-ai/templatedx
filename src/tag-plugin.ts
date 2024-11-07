@@ -17,10 +17,10 @@ export interface PluginContext {
   nodeHelpers: NodeHelpers;
   createNodeTransformer: (scope: Scope) => any;
   scope: Scope;
-  componentName: string;
+  tagName: string;
 }
 
-export abstract class ComponentPlugin<Props = Record<string, any>> {
+export abstract class TagPlugin<Props = Record<string, any>> {
   abstract transform(
     props: Props,
     children: Node[],

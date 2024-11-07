@@ -1,7 +1,7 @@
-import { ForEachPlugin, Tags as ForEachTags } from './components-plugins/for-each';
-import { ConditionalPlugin, Tags as ConditionalTags } from './components-plugins/conditional';
-import { RawPlugin, Tags as RawTags } from './components-plugins/raw';
-import { ComponentPluginRegistry } from './component-plugin-registry';
+import { ForEachPlugin, Tags as ForEachTags } from './tag-plugins/for-each';
+import { ConditionalPlugin, Tags as ConditionalTags } from './tag-plugins/conditional';
+import { RawPlugin, Tags as RawTags } from './tag-plugins/raw';
+import { TagPluginRegistry } from './tag-plugin-registry';
 
 import { FilterRegistry } from "./filter-registry";
 import {
@@ -18,9 +18,9 @@ import {
 } from "./filter-plugins";
 
 
-ComponentPluginRegistry.register(new ForEachPlugin(), ForEachTags);
-ComponentPluginRegistry.register(new ConditionalPlugin(), ConditionalTags);
-ComponentPluginRegistry.register(new RawPlugin(), RawTags);
+TagPluginRegistry.register(new ForEachPlugin(), ForEachTags);
+TagPluginRegistry.register(new ConditionalPlugin(), ConditionalTags);
+TagPluginRegistry.register(new RawPlugin(), RawTags);
 
 FilterRegistry.register("capitalize", capitalize);
 FilterRegistry.register("upper", upper);

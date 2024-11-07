@@ -1,6 +1,7 @@
 import { getInput } from "../helpers";
 import { expect, test } from 'vitest'
-import { parse, transformTree } from "../../index";
+import { transform } from "../../index";
+import { parse } from "../../ast-utils";
 
 const props = {
   num: 4,
@@ -9,6 +10,6 @@ const props = {
 test('replaces function props', async () => {
   const input = getInput(__dirname);
   const tree = parse(input);
-  const processedFn = async () => transformTree(tree, props);
+  const processedFn = async () => transform(tree, props);
   expect(processedFn).rejects.toThrowError();
 });

@@ -33,7 +33,7 @@ Bracket syntax allows access to object properties using string keys, which is us
 
 ## Error Handling
 
-Accessing an undefined or null variable will throw an error, ensuring that all variables used are explicitly defined.
+Accessing an undefined variable will return an empty string.
 
 For example:
 
@@ -41,7 +41,7 @@ For example:
 { props.undefinedVar }
 ```
 
-This will result in an error: "Undefined variable 'undefinedVar' in template."
+Returns nothing (i.e. empty string)
 
 ## Examples
 
@@ -82,6 +82,6 @@ alice.johnson@example.com
 { props.user.address.street }
 ```
 
-**Error:** Cannot read property 'street' of undefined in template.
+Output empty string
 
 ---
