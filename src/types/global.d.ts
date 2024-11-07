@@ -1,26 +1,18 @@
-import type { ForEachProps } from "../tag-plugins/for-each";
-import type { IfProps, ElseIfProps, ElseProps } from "../tag-plugins/conditional";
-import type { RawProps } from "../tag-plugins/raw";
+import type { BaseMDXProvidedComponents } from '../types';
+import { Filters } from './filter-plugins';
 
-export interface BaseMDXProvidedComponents {
-  ForEach: <T = any>(props: ForEachProps<T>) => any;
-  If: React.FC<IfProps>;
-  ElseIf: React.FC<ElseIfProps>;
-  Else: React.FC<ElseProps>;
-  Raw: React.FC<RawProps>;
-}
 
 declare global {
-  const capitalize: TemplateDX.Filters['capitalize'];
-  const upper: TemplateDX.Filters['upper'];
-  const lower: TemplateDX.Filters['lower'];
-  const truncate: TemplateDX.Filters['truncate'];
-  const abs: TemplateDX.Filters['abs'];
-  const join: TemplateDX.Filters['join'];
-  const round: TemplateDX.Filters['round'];
-  const replace: TemplateDX.Filters['replace'];
-  const urlencode: TemplateDX.Filters['urlencode'];
-  const dump: TemplateDX.Filters['dump'];
+  const capitalize: Filters['capitalize'];
+  const upper: Filters['upper'];
+  const lower: Filters['lower'];
+  const truncate: Filters['truncate'];
+  const abs: Filters['abs'];
+  const join: Filters['join'];
+  const round: Filters['round'];
+  const replace: Filters['replace'];
+  const urlencode: Filters['urlencode'];
+  const dump: Filters['dump'];
   interface MDXProvidedComponents extends BaseMDXProvidedComponents {}
 }
 
