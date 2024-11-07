@@ -11,7 +11,7 @@ import { FilterRegistry } from "./filter-registry";
 import type { FilterFunction } from "./filter-registry";
 import type { ContentLoader } from "./types";
 import type { Root } from "mdast";
-import type { BaseMDXProvidedComponents } from './types/global';
+import type { BaseMDXProvidedComponents } from './types';
 import './register-builtin-plugins';
 
 export type {

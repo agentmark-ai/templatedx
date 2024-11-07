@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <strong>A declarative, extensible & composable template engine based on Markdown and JSX.</strong>
+  <strong>The declarative, extensible & composable type-safe template engine.</strong>
 </p>
 
 <p align="center">
