@@ -2,14 +2,23 @@ import {themes as prismThemes} from 'prism-react-renderer';
 
 module.exports = {
   title: 'TemplateDX',
-  tagline: 'A declarative, extensible & composable template engine based on Markdown and JSX.',
-  url: 'https://your-docusaurus-site.com',
-  baseUrl: '/',
+  tagline: 'The declarative, extensible & composable type-safe templating engine. Based on Markdown and JSX.',
+  url: 'https://puzzlet-ai.github.io/',
+  baseUrl: '/templatedx/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.ico',
-  organizationName: 'puzzlet-ai', // Usually your GitHub org/user name.
-  projectName: 'templatedx', // Usually your repo name.
+  organizationName: 'puzzlet-ai',
+  projectName: 'templatedx',
+  scripts: [
+    {
+      src: 'https://plausible.io/js/script.outbound-links.js',
+      async: true,
+      defer: true,
+      'data-domain': 'puzzlet-ai.github.io/templatedx',
+      'data-spa': 'auto',
+    },
+  ],
 
   presets: [
     [
@@ -17,8 +26,7 @@ module.exports = {
       {
         docs: {
           sidebarPath: require.resolve('./sidebars.js'),
-          // Please change this to your repo.
-          editUrl: 'https://github.com/your-org/templatedx-docs/edit/main/',
+          editUrl: 'https://github.com/puzzlet-ai/templatedx-docs/edit/main/',
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
@@ -28,6 +36,10 @@ module.exports = {
   ],
 
   themeConfig: {
+    colorMode: {
+      defaultMode: 'light',
+      disableSwitch: true,
+    },
     navbar: {
       title: 'TemplateDX',
       logo: {
@@ -38,17 +50,16 @@ module.exports = {
         {
           type: 'docSidebar',
           sidebarId: 'docs',
-          position: 'left',
+          position: 'right',
           label: 'Docs',
         },
-        // Remove or modify the Tutorial link if not needed
-        // {
-        //   to: '/docs/intro',
-        //   label: 'Tutorial',
-        //   position: 'left',
-        // },
         {
-          href: 'https://github.com/your-org/templatedx',
+          label: 'Discord',
+          to: 'https://discord.gg/P2NeMDtXar',
+          position: 'right'
+        },
+        {
+          to: 'https://github.com/puzzlet-ai/templatedx',
           label: 'GitHub',
           position: 'right',
         },
@@ -64,7 +75,10 @@ module.exports = {
               label: 'Getting Started',
               to: '/docs/getting-started',
             },
-            // Add more links as needed
+            {
+              label: 'FAQ',
+              to: '/docs/faq',
+            },
           ],
         },
         {
@@ -72,9 +86,12 @@ module.exports = {
           items: [
             {
               label: 'GitHub',
-              href: 'https://github.com/your-org/templatedx',
+              href: 'https://github.com/puzzlet-ai/templatedx',
             },
-            // Add more community links if available
+            {
+              label: 'Discord',
+              href: 'https://discord.gg/P2NeMDtXar',
+            },
           ],
         },
       ],
@@ -83,7 +100,7 @@ module.exports = {
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
-      additionalLanguages: ['jsx'],
+      additionalLanguages: ['jsx', 'bash'],
     },
   },
 };

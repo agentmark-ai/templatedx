@@ -1,31 +1,13 @@
-/* src/css/custom.css */
-
-/* Example: Customize the navbar background */
-.navbar {
-  background-color: #1f2937; /* Dark gray */
+:root {
+  --ifm-color-primary: #2063CF;
+  --ifm-background-color: #ffffff;
+  --ifm-font-color-base: #000000;
+  --ifm-font-color-secondary: #4d4d4d;
 }
 
-/* Example: Customize link colors */
-.navbar__link {
-  color: #10b981; /* Teal */
+html[data-theme='dark'] {
+  --ifm-color-primary: #2063CF;
+  --ifm-background-color: #121212;
+  --ifm-font-color-base: #ffffff;
+  --ifm-font-color-secondary: #cccccc;
 }
-
-.navbar__link:hover {
-  color: #34d399; /* Light Teal */
-}
-
-/* Example: Customize the footer */
-.footer {
-  background-color: #111827; /* Almost black */
-  color: #d1d5db; /* Light gray */
-}
-
-.footer a {
-  color: #10b981;
-}
-
-.footer a:hover {
-  color: #34d399;
-}
-
-/* Add more custom styles as needed */

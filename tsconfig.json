@@ -12,8 +12,7 @@
     "resolveJsonModule": true,
     "strict": true,
     "skipLibCheck": true,
-    "jsx": "react-jsx",
-    "jsxImportSource": "react",
+    "jsx": "preserve",
     "allowJs": true,
     "esModuleInterop": true
   },

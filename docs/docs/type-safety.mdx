@@ -1,0 +1,43 @@
+---
+title: Type Safety
+---
+
+# Type Safety
+
+TemplateDX supports full type-safety, with just a few short steps.
+
+<img src="/img/type-safety-example.png" />
+
+## Ading Type Safety
+
+### Adjust your tsconfig
+
+**Note**: It is recommended to use a separate `tsconfig.json` file for your TemplateDX files.
+
+```json
+{
+  "compilerOptions": {
+    ...,
+    "jsx": "preserve",
+    "allowJs": true
+  },
+  "mdx": {
+    "checkMdx": true
+  }
+}
+```
+
+### Add JSDOC types to your templatedx files
+```jsx
+{/**
+  * @typedef Props
+  * @property {string} name - Who to greet.
+  */
+}
+
+# Hello {props.name}
+```
+
+### Add types for your filters/tags
+
+Placeholder...
