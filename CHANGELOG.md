@@ -1,5 +1,11 @@
 # @puzzlet/templatedx
 
+## 0.5.1
+
+### Patch Changes
+
+- f09b98e: Function rename, extending plugins.
+
 ## 0.5.0
 
 ### Minor Changes
