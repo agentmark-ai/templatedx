@@ -1,5 +1,11 @@
 # @puzzlet/templatedx
 
+## 0.5.2
+
+### Patch Changes
+
+- cd893aa: Fix type safety
+
 ## 0.5.1
 
 ### Patch Changes
