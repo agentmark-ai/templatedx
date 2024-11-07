@@ -40,4 +40,17 @@ TemplateDX supports full type-safety, with just a few short steps.
 
 ### Add types for your filters/tags
 
-Placeholder...
+Create a `types/global.d.ts` file and define your own custom filters/tags.
+
+```tsx
+import type { BaseMDXProvidedComponents, FilterFunction } from '@puzzlet/templatedx';
+
+declare global {
+  const myCustomFilter: FilterFunction<string, string>;
+
+  interface MDXProvidedComponents extends BaseMDXProvidedComponents {
+    MyCustomTag: React.FC<MyCustomTagProps>;
+  }
+}
+export {};
+```
