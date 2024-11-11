@@ -1,5 +1,11 @@
 # @puzzlet/templatedx
 
+## 0.5.3
+
+### Patch Changes
+
+- dd9bca9: Import fix, type
+
 ## 0.5.2
 
 ### Patch Changes
