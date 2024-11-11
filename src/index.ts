@@ -12,6 +12,7 @@ import type { FilterFunction } from "./filter-registry";
 import type { ContentLoader } from "./types";
 import type { Root } from "mdast";
 import type { BaseMDXProvidedComponents } from './types';
+import './types/global.d.ts';
 import './register-builtin-plugins';
 
 export type {
@@ -19,7 +20,7 @@ export type {
   Root as Ast,
   PluginContext,
   FilterFunction,
-  BaseMDXProvidedComponents,
+  BaseMDXProvidedComponents
 };
 export {
   stringify,
