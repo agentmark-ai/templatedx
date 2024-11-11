@@ -1,5 +1,5 @@
 import type { BaseMDXProvidedComponents } from '../types';
-import { Filters } from './filter-plugins';
+import { Filters } from '../filter-plugins';
 
 
 declare global {
