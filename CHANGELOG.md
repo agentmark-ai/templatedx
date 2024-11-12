@@ -1,5 +1,11 @@
 # @puzzlet/templatedx
 
+## 0.5.4
+
+### Patch Changes
+
+- 529be7b: Fix: exposing global types
+
 ## 0.5.3
 
 ### Patch Changes
