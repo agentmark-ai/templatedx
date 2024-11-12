@@ -1,5 +1,11 @@
 # @puzzlet/templatedx
 
+## 0.5.6
+
+### Patch Changes
+
+- 35205b9: Include global from index file
+
 ## 0.5.5
 
 ### Patch Changes
