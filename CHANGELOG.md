@@ -1,5 +1,11 @@
 # @puzzlet/templatedx
 
+## 0.5.5
+
+### Patch Changes
+
+- 28702ae: Including global types
+
 ## 0.5.4
 
 ### Patch Changes
