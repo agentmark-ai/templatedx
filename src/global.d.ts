@@ -1,6 +1,7 @@
-import type { BaseMDXProvidedComponents } from '../types';
-import { Filters } from '../filter-plugins';
+import type { BaseMDXProvidedComponents } from './types';
+import type { Filters } from './filter-plugins';
 
+export {};
 
 declare global {
   const capitalize: Filters['capitalize'];
@@ -15,5 +16,3 @@ declare global {
   const dump: Filters['dump'];
   interface MDXProvidedComponents extends BaseMDXProvidedComponents {}
 }
-
-export {};

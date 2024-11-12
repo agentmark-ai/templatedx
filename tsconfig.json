@@ -2,7 +2,7 @@
   "compilerOptions": {
     "outDir": "dist",
     "declaration": true,
-    "declarationMap": true,
+    "declarationDir": "./dist/types",
     "sourceMap": true,
     "moduleResolution": "node",
     "module": "ESNext",
@@ -20,5 +20,5 @@
     "checkMdx": true
   },
   "include": ["src"],
-  "exclude": ["node_modules", "**/__tests__/*"]
+  "exclude": ["node_modules", "dist", "**/__tests__/*"]
 }
