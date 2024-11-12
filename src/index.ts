@@ -12,7 +12,7 @@ import type { FilterFunction } from "./filter-registry";
 import type { ContentLoader } from "./types";
 import type { Root } from "mdast";
 import type { BaseMDXProvidedComponents } from './types';
-import './global';
+import './global.d';
 import './register-builtin-plugins';
 
 export type {
