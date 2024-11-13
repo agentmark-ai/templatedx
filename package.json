@@ -1,6 +1,6 @@
 {
   "name": "@puzzlet/templatedx",
-  "version": "0.5.6",
+  "version": "0.5.7",
   "license": "MIT",
   "main": "dist/index.js",
   "module": "dist/index.mjs",

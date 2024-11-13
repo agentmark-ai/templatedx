@@ -1,5 +1,12 @@
 # @puzzlet/templatedx
 
+## 0.5.7
+
+### Patch Changes
+
+- 6aacb00: Include global from index file
+- 6aacb00: bundling, removing unused deps
+
 ## 0.5.6
 
 ### Patch Changes
