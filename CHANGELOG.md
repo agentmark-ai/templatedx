@@ -1,5 +1,11 @@
 # @puzzlet/templatedx
 
+## 0.6.0
+
+### Minor Changes
+
+- 00351b7: Adds load method
+
 ## 0.5.7
 
 ### Patch Changes
