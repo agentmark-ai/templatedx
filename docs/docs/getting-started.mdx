@@ -37,20 +37,12 @@ const result = stringify(await transform(MyTemplate, props));
 ### Node
 
 ```tsx
-import { parse, transform, stringify } from '@puzzlet/templatedx';
-import type { ContentLoader } from '@puzzlet/templatedx';
-import fs from 'fs';
-
-// Define how to load imports.
-const getFile: ContentLoader = (path: string) => {
-  const input = fs.readFileSync(path, 'utf-8');
-  return input;
-}
+import { transform, stringify, load } from '@puzzlet/templatedx';
 
 const run = async (path: string) => {
-  const mdx = await getFile(path);
-  const parsed = await parse(mdx, `${basePathToMdxFile}`, getFile);
+  const mdx = await load('./example.mdx');
   const props = { name: 'Jim' };
-  const result = stringify(await transform(parsed, myProps));
+  return stringify(await transform(parsed, myProps));
 }
+run();
 ```
