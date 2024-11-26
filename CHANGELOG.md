@@ -1,5 +1,11 @@
 # @puzzlet/templatedx
 
+## 0.6.1
+
+### Patch Changes
+
+- 68e07da: Nextjs build fails due to fs
+
 ## 0.6.0
 
 ### Minor Changes
