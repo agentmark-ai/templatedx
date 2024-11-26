@@ -16,11 +16,22 @@ import type { BaseMDXProvidedComponents } from './types';
 import './global.d';
 import './register-builtin-plugins';
 
+const readFile = async (path: string) => {
+  // @ts-ignore
+  if (typeof Deno !== 'undefined') {
+    // @ts-ignore
+    return await Deno.readTextFile(path);
+  } else if (typeof require !== 'undefined') {
+    const { readFile } = require('fs/promises');
+    return await readFile(path, 'utf8');
+  } else {
+    throw new Error('Unsupported environment');
+  }
+};
 
 async function load (path: string) {
-  const fs = await import('node:fs/promises');
-  const file = await fs.readFile(path, 'utf8');
-  const componentLoader = async (path: string) => fs.readFile(path, 'utf8');
+  const file = await readFile(path);
+  const componentLoader = async (path: string) => readFile(path);
   return bundle(file, getDirname(path), componentLoader);
 }
 
