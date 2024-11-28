@@ -1,5 +1,11 @@
 # @puzzlet/templatedx
 
+## 0.6.2
+
+### Patch Changes
+
+- d2e8efe: use import instead of require
+
 ## 0.6.1
 
 ### Patch Changes
