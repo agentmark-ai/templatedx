@@ -22,7 +22,7 @@ const readFile = async (path: string) => {
     // @ts-ignore
     return await Deno.readTextFile(path);
   } else if (typeof require !== 'undefined') {
-    const { readFile } = require('fs/promises');
+    const { readFile } = await import('fs/promises');
     return await readFile(path, 'utf8');
   } else {
     throw new Error('Unsupported environment');
