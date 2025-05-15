@@ -1,5 +1,5 @@
 {
-  "name": "@puzzlet/templatedx",
+  "name": "@agentmark/templatedx",
   "version": "0.6.2",
   "license": "MIT",
   "main": "dist/index.js",
