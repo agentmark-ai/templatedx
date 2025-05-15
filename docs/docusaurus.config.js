@@ -3,30 +3,30 @@ import {themes as prismThemes} from 'prism-react-renderer';
 module.exports = {
   title: 'TemplateDX',
   tagline: 'The declarative, extensible & composable type-safe templating engine. Based on Markdown and JSX.',
-  url: 'https://puzzlet-ai.github.io/',
+  url: 'https://agentmark-ai.github.io/',
   baseUrl: '/templatedx/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.ico',
-  organizationName: 'puzzlet-ai',
+  organizationName: 'agentmark-ai',
   projectName: 'templatedx',
   scripts: [
     {
       src: 'https://plausible.io/js/script.outbound-links.js',
       async: true,
       defer: true,
-      'data-domain': 'puzzlet-ai.github.io/templatedx',
+      'data-domain': 'agentmark-ai.github.io/templatedx',
       'data-spa': 'auto',
     },
   ],
-
+  staticDirectories: ['static'],
   presets: [
     [
       'classic',
       {
         docs: {
           sidebarPath: require.resolve('./sidebars.js'),
-          editUrl: 'https://github.com/puzzlet-ai/templatedx-docs/edit/main/',
+          editUrl: 'https://github.com/agentmark-ai/templatedx-docs/edit/main/',
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
@@ -44,7 +44,7 @@ module.exports = {
       title: 'TemplateDX',
       logo: {
         alt: 'TemplateDX Logo',
-        src: 'https://www.puzzlet.ai/images/logo.svg',
+        src: 'img/logo.svg',
       },
       items: [
         {
@@ -59,7 +59,7 @@ module.exports = {
           position: 'right'
         },
         {
-          to: 'https://github.com/puzzlet-ai/templatedx',
+          to: 'https://github.com/agentmark-ai/templatedx',
           label: 'GitHub',
           position: 'right',
         },
@@ -86,7 +86,7 @@ module.exports = {
           items: [
             {
               label: 'GitHub',
-              href: 'https://github.com/puzzlet-ai/templatedx',
+              href: 'https://github.com/agentmark-ai/templatedx',
             },
             {
               label: 'Discord',
@@ -95,7 +95,7 @@ module.exports = {
           ],
         },
       ],
-      copyright: `© ${new Date().getFullYear()} Puzzlet.ai`,
+      copyright: `© ${new Date().getFullYear()} Agentmark.co`,
     },
     prism: {
       theme: prismThemes.github,

@@ -1,4 +1,4 @@
-# @puzzlet/templatedx
+# @agentmark/templatedx
 
 ## 0.6.2
 

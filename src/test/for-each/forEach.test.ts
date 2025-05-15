@@ -6,7 +6,7 @@ import fs from 'fs';
 
 const props = {
   arr: [1, 2, 3],
-  query: 'how much does puzzlet cost?',
+  query: 'how much does agentmark cost?',
   queryAnswer: 49,
   nestedArr: [{ num: 1, deep: { name: 'a' } }, { num: 2, deep: { name: 'b' } }, { num: 3, deep: { name: 'c' } }]
 };
