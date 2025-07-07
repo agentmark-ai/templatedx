@@ -17,7 +17,8 @@ export class ForEachPlugin extends TagPlugin {
     const {
       scope,
       createNodeTransformer,
-      nodeHelpers
+      nodeHelpers,
+      componentASTs
     } = context;
 
     const { hasFunctionBody, getFunctionBody, NODE_TYPES } = nodeHelpers;
@@ -68,13 +69,25 @@ export class ForEachPlugin extends TagPlugin {
           ...(indexParamName && { [indexParamName]: index }),
         });
         const itemTransformer = createNodeTransformer(itemScope);
-        const processedChildren = await Promise.all(
+        // First resolve all scope variables in the children nodes
+        const resolvedChildren = await Promise.all(
           body.map(async (child) => {
             const result = await itemTransformer.transformNode(child);
             return Array.isArray(result) ? result : [result];
           })
         );
-        return processedChildren.flat();
+        
+        let finalChildren = resolvedChildren.flat();
+        
+        // If componentASTs is available, inline components after variable resolution
+        if (componentASTs) {
+          const { inlineComponents } = await import('../bundler');
+          const tempTree = { type: 'root', children: finalChildren };
+          await inlineComponents(tempTree as any, componentASTs);
+          finalChildren = tempTree.children;
+        }
+        
+        return finalChildren;
       })
     );
     const resultNodes = resultNodesPerItem.flat();

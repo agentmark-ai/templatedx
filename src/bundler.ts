@@ -13,7 +13,9 @@ import {
 export async function bundle(
   mdxContent: string,
   baseDir: string,
-  contentLoader: ContentLoader
+  contentLoader: ContentLoader,
+  transformProps?: Record<string, any>,
+  shared?: Record<string, any>
 ): Promise<Root> {
   const processedFiles = new Set<string>();
   const mainAbsolutePath = resolvePath(baseDir, '__PROMPTDX_IGNORE__.mdx');
@@ -26,7 +28,20 @@ export async function bundle(
     contentLoader
   );
 
+  // First pass: inline components in the original tree
   await inlineComponents(mainTree, componentASTs);
+
+  // If transform props are provided, run transformation which may create 
+  // new component references, then run bundling again
+  if (transformProps || shared) {
+    const { transformTreeWithComponents } = await import('./transformer');
+    const transformedTree = await transformTreeWithComponents(mainTree, transformProps || {}, shared || {}, componentASTs);
+    
+    // Second pass: inline any new components created during transformation
+    await inlineComponents(transformedTree, componentASTs);
+    
+    return transformedTree;
+  }
 
   return mainTree;
 }
@@ -150,7 +165,7 @@ function extractImports(tree: Root, absolutePath: string): Record<string, string
   return imports;
 }
 
-async function inlineComponents(
+export async function inlineComponents(
   tree: Root,
   componentASTs: ComponentASTs
 ): Promise<void> {
@@ -160,6 +175,8 @@ async function inlineComponents(
     hasReplacements = inlineJsxElements(tree, componentASTs);
   } while (hasReplacements);
 }
+
+
 
 function inlineJsxElements(
   tree: Root | Parent,

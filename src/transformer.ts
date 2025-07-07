@@ -310,6 +310,7 @@ export class NodeTransformer {
           scope: this.scope,
           tagName,
           nodeHelpers,
+          componentASTs: (this as any).componentASTs,
         };
         const result = await plugin.transform(props, node.children, pluginContext);
         return result;
@@ -370,6 +371,19 @@ export const transformTree = async (
 ): Promise<Root> => {
   const scope = new Scope({ props }, shared);
   const transformer = new NodeTransformer(scope, tagPluginRegistry, filterRegistry);
+  const processedTree = await transformer.transformNode(tree);
+  return processedTree as Root;
+};
+
+export const transformTreeWithComponents = async (
+  tree: Root,
+  props: Record<string, any> = {},
+  shared: Record<string, any> = {},
+  componentASTs: any
+): Promise<Root> => {
+  const scope = new Scope({ props }, shared);
+  const transformer = new NodeTransformer(scope);
+  (transformer as any).componentASTs = componentASTs;
   const processedTree = await transformer.transformNode(tree);
   return processedTree as Root;
 };

@@ -18,6 +18,7 @@ export interface PluginContext {
   createNodeTransformer: (scope: Scope) => any;
   scope: Scope;
   tagName: string;
+  componentASTs?: any;
 }
 
 export abstract class TagPlugin<Props = Record<string, any>> {
