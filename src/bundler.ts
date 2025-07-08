@@ -247,7 +247,8 @@ function processSimpleJSXInExpression(
     const tempTree = parse(expressionNode.value);
     let wasModified = false;
 
-    // Process components and wrap results in fragments
+    // Process components by replacing them with their content
+    // If component is not inside a fragment, wrap it
     visit(tempTree, [NODE_TYPES.MDX_JSX_FLOW_ELEMENT, NODE_TYPES.MDX_JSX_TEXT_ELEMENT], (node: any, index, parent) => {
       const componentName = node.name;
       if (!componentName || !parent || index === null) {
@@ -262,10 +263,20 @@ function processSimpleJSXInExpression(
           inlineComponentsAndResolveProps(childNode, props, [], componentASTs)
         ).flat();
         
-        // Wrap in fragment since we're in a JSX expression context
-        const fragment = createFragment(processedComponentNodes);
-        parent.children.splice(index, 1, fragment);
+        // Check if this component's parent is a fragment
+        const parentIsFragment = parent.type === NODE_TYPES.MDX_JSX_FLOW_ELEMENT && parent.name === null;
+        
+        if (parentIsFragment) {
+          // If parent is fragment, just replace with content (no additional wrapping)
+          parent.children.splice(index, 1, ...processedComponentNodes);
+        } else {
+          // If not in a fragment, wrap the processed content in a fragment
+          const fragment = createFragment(processedComponentNodes);
+          parent.children.splice(index, 1, fragment);
+        }
+        
         wasModified = true;
+        return [SKIP, index];
       }
     });
 
