@@ -80,10 +80,9 @@ export class ForEachPlugin extends TagPlugin {
         let finalChildren = resolvedChildren.flat();
         
         // If componentASTs is available, inline components after variable resolution
-        if (componentASTs) {
-          const { inlineComponents } = await import('../bundler');
+        if (componentASTs && nodeHelpers.inlineComponents) {
           const tempTree = { type: 'root', children: finalChildren };
-          await inlineComponents(tempTree as any, componentASTs);
+          await nodeHelpers.inlineComponents(tempTree, componentASTs);
           finalChildren = tempTree.children;
         }
         

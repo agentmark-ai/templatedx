@@ -36,7 +36,7 @@ const toMdxMarkdown = (node: Root) => {
   return toMarkdown(node, options);
 }
 
-const nodeHelpers = {
+const createNodeHelpers = (componentASTs?: any) => ({
   isMdxJsxElement,
   isMdxJsxFlowElement,
   isMdxJsxTextElement,
@@ -45,7 +45,13 @@ const nodeHelpers = {
   hasFunctionBody,
   getFunctionBody,
   NODE_TYPES,
-};
+  ...(componentASTs && {
+    inlineComponents: async (tree: { type: string; children: Node[] }, componentASTsToUse: any) => {
+      const { inlineComponents } = await import('./bundler');
+      await inlineComponents(tree as any, componentASTsToUse);
+    }
+  }),
+});
 
 export class NodeTransformer {
   private scope: Scope;
@@ -293,6 +299,7 @@ export class NodeTransformer {
       const plugin = TagPluginRegistry.get(tagName);
       if (plugin) {
         const props = this.evaluateProps(node);
+        const nodeHelpers = createNodeHelpers((this as any).componentASTs);
         const pluginContext: PluginContext = {
           createNodeTransformer: (scope: Scope) => new NodeTransformer(scope),
           scope: this.scope,

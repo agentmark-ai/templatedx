@@ -10,6 +10,7 @@ export interface NodeHelpers {
   toMarkdown(node: Node): string;
   hasFunctionBody(node: Node): boolean;
   getFunctionBody(node: Node): { body: Node[]; argumentNames: string[] };
+  inlineComponents?(tree: { type: string; children: Node[] }, componentASTs: any): Promise<void>;
   NODE_TYPES: typeof NODE_TYPES;
 }
 
