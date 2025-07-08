@@ -25,7 +25,26 @@ export function getDirname(filePath: string): string {
 }
 
 export function cloneObject(obj: any): any {
-  return JSON.parse(JSON.stringify(obj));
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
+  
+  if (obj instanceof Date) {
+    return new Date(obj.getTime());
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(item => cloneObject(item));
+  }
+  
+  const cloned: any = {};
+  for (const key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      cloned[key] = cloneObject(obj[key]);
+    }
+  }
+  
+  return cloned;
 }
 
 export function stringifyValue(value: any): string {

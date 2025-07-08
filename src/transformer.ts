@@ -9,7 +9,7 @@ import { OperatorFunction } from './types';
 import { TagPluginRegistry } from './tag-plugin-registry';
 import { PluginContext } from './tag-plugin';
 import { hasFunctionBody, getFunctionBody } from './ast-utils';
-import { stringifyValue } from './utils';
+import { stringifyValue, cloneObject } from './utils';
 import {
   isMdxJsxElement,
   isMdxJsxFlowElement,
@@ -329,7 +329,7 @@ export class NodeTransformer {
         return result;
       } else if ((this as any).componentASTs && (this as any).componentASTs[tagName]) {
         // Handle component inlining at runtime
-        const componentNodes = JSON.parse(JSON.stringify((this as any).componentASTs[tagName])); // Deep clone
+        const componentNodes = cloneObject((this as any).componentASTs[tagName]);
         const props = this.evaluateProps(node);
         const childrenContent = node.children || [];
 
