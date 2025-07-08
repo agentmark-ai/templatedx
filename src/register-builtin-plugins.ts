@@ -1,6 +1,7 @@
 import { ForEachPlugin, Tags as ForEachTags } from './tag-plugins/for-each';
 import { ConditionalPlugin, Tags as ConditionalTags } from './tag-plugins/conditional';
 import { RawPlugin, Tags as RawTags } from './tag-plugins/raw';
+import { ExtractMediaPlugin, Tags as ExtractMediaTags } from './tag-plugins/extract-media';
 import { TagPluginRegistry } from './tag-plugin-registry';
 
 import { FilterRegistry } from "./filter-registry";
@@ -21,6 +22,7 @@ import {
 TagPluginRegistry.register(new ForEachPlugin(), ForEachTags);
 TagPluginRegistry.register(new ConditionalPlugin(), ConditionalTags);
 TagPluginRegistry.register(new RawPlugin(), RawTags);
+TagPluginRegistry.register(new ExtractMediaPlugin(), ExtractMediaTags);
 
 FilterRegistry.register("capitalize", capitalize);
 FilterRegistry.register("upper", upper);
