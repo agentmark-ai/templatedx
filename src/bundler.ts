@@ -230,32 +230,38 @@ function processSimpleJSXInExpression(
   const expressionText = expressionNode.value;
   let newExpressionText = expressionText;
   
-  // Simple string-based replacement for JSX components
+  // Parse JSX components and inline them with proper prop substitution
   for (const [componentName, componentNodes] of Object.entries(componentASTs)) {
     const jsxPattern = new RegExp(`<${componentName}([^>]*?)\\s*/>`, 'g');
-         const replacement = newExpressionText.replace(jsxPattern, (match: string, attributes: string) => {
-       // Extract the component content for simple heading cases only
-       if (componentNodes && componentNodes.length > 0) {
-         const firstNode = componentNodes[0];
-         if (firstNode.type === 'heading' && firstNode.children) {
-           // Reconstruct the heading with proper markdown syntax
-           const headingPrefix = '#'.repeat(firstNode.depth || 2) + ' ';
-           let headingContent = '';
-           
-           // Combine all children (text nodes and expressions)
-           for (const child of firstNode.children) {
-             if (child.type === 'text') {
-               headingContent += (child as any).value;
-             } else if (child.type === 'mdxTextExpression') {
-               headingContent += '{' + (child as any).value + '}';
-             }
-           }
-           
-           return headingPrefix + headingContent;
-         }
-       }
-       return match; // fallback to original if we can't inline
-     });
+    const replacement = newExpressionText.replace(jsxPattern, (match: string, attributes: string) => {
+      // Extract the component content and apply prop substitution
+      if (componentNodes && componentNodes.length > 0) {
+        const firstNode = componentNodes[0];
+        if (firstNode.type === 'heading' && firstNode.children) {
+          // Parse props from JSX attributes
+          const props = parseJSXAttributes(attributes);
+          
+          // Reconstruct the heading with proper markdown syntax and prop substitution
+          const headingPrefix = '#'.repeat(firstNode.depth || 2) + ' ';
+          let headingContent = '';
+          
+          // Combine all children (text nodes and expressions) with prop substitution
+          for (const child of firstNode.children) {
+            if (child.type === 'text') {
+              headingContent += (child as any).value;
+            } else if (child.type === 'mdxTextExpression') {
+              const expression = (child as any).value;
+              // Apply prop substitution to expressions
+              const { value: substitutedExpression } = substitutePropsInExpression(expression, props);
+              headingContent += '{' + substitutedExpression + '}';
+            }
+          }
+          
+          return headingPrefix + headingContent;
+        }
+      }
+      return match; // fallback to original if we can't inline
+    });
     
     if (replacement !== newExpressionText) {
       newExpressionText = replacement;
@@ -268,6 +274,30 @@ function processSimpleJSXInExpression(
   }
   
   return replaced;
+}
+
+function parseJSXAttributes(attributesString: string): Record<string, any> {
+  const props: Record<string, any> = {};
+  
+  if (!attributesString.trim()) {
+    return props;
+  }
+  
+  // Simple regex to parse JSX attributes like: item={props.msg} name="value"
+  const attrPattern = /(\w+)=\{([^}]+)\}|(\w+)="([^"]*)"/g;
+  let match;
+  
+  while ((match = attrPattern.exec(attributesString)) !== null) {
+    if (match[1] && match[2]) {
+      // Expression attribute: item={props.msg}
+      props[match[1]] = match[2];
+    } else if (match[3] && match[4]) {
+      // String attribute: name="value" 
+      props[match[3]] = JSON.stringify(match[4]);
+    }
+  }
+  
+  return props;
 }
 
 function inlineJsxElements(
