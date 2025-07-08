@@ -4,6 +4,6 @@ import SimpleComponent from './simple-component.mdx';
 
 <ForEach arr={props.items}>
   {(item) => (
-    <SimpleComponent text="Hello" />
+    <SimpleComponent text={props.text} />
   )}
 </ForEach>

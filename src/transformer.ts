@@ -302,6 +302,7 @@ export class NodeTransformer {
   ): Promise<Node | Node[]> {
     try {
       const tagName = node.name!;
+      console.log('tagName', tagName, this.tagPluginRegistry);
       const plugin = this.tagPluginRegistry.get(tagName);
       if (plugin) {
         const props = this.evaluateProps(node);
