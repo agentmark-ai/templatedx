@@ -15,7 +15,8 @@ import { TagPluginRegistry } from './tag-plugin-registry';
 export async function bundle(
   mdxContent: string,
   baseDir: string,
-  contentLoader: ContentLoader
+  contentLoader: ContentLoader,
+  tagPluginRegistry: TagPluginRegistry
 ): Promise<Root> {
   const processedFiles = new Set<string>();
   const mainAbsolutePath = resolvePath(baseDir, '__PROMPTDX_IGNORE__.mdx');
@@ -28,7 +29,7 @@ export async function bundle(
     contentLoader
   );
 
-  await inlineComponents(mainTree, componentASTs);
+  await inlineComponents(mainTree, componentASTs, tagPluginRegistry);
 
   return mainTree;
 }
@@ -154,12 +155,13 @@ function extractImports(tree: Root, absolutePath: string): Record<string, string
 
 async function inlineComponents(
   tree: Root,
-  componentASTs: ComponentASTs
+  componentASTs: ComponentASTs,
+  tagPluginRegistry: TagPluginRegistry
 ): Promise<void> {
   let hasReplacements: boolean;
 
   do {
-    hasReplacements = inlineJsxElements(tree, componentASTs);
+    hasReplacements = inlineJsxElements(tree, componentASTs, {}, tagPluginRegistry);
   } while (hasReplacements);
 }
 
@@ -168,7 +170,8 @@ async function inlineComponents(
 function processChildrenDirectly(
   children: any[],
   componentASTs: ComponentASTs,
-  parentProps: Record<string, any> = {}
+  parentProps: Record<string, any> = {},
+  tagPluginRegistry: TagPluginRegistry
 ): boolean {
   let replaced = false;
   
@@ -194,9 +197,9 @@ function processChildrenDirectly(
         children.splice(i, 1, ...processedComponentNodes.flat());
         replaced = true;
         i += processedComponentNodes.flat().length - 1;
-      } else if (componentName && TagPluginRegistry.get(componentName)) {
+      } else if (componentName && tagPluginRegistry.get(componentName)) {
         if (child.children && child.children.length > 0) {
-          const childrenProcessed = processChildrenDirectly(child.children, componentASTs, parentProps);
+          const childrenProcessed = processChildrenDirectly(child.children, componentASTs, parentProps, tagPluginRegistry);
           if (childrenProcessed) {
             replaced = true;
           }
@@ -208,7 +211,7 @@ function processChildrenDirectly(
         replaced = true;
       }
     } else if (isParentNode(child)) {
-      const childrenProcessed = processChildrenDirectly(child.children, componentASTs, parentProps);
+      const childrenProcessed = processChildrenDirectly(child.children, componentASTs, parentProps, tagPluginRegistry);
       if (childrenProcessed) {
         replaced = true;
       }
@@ -290,7 +293,8 @@ function createFragment(children: Node[]): Node {
 function inlineJsxElements(
   tree: Root | Parent,
   componentASTs: ComponentASTs,
-  parentProps: Record<string, any> = {}
+  parentProps: Record<string, any> = {},
+  tagPluginRegistry: TagPluginRegistry
 ): boolean {
   let replaced = false;
 
@@ -320,9 +324,9 @@ function inlineJsxElements(
         parent.children.splice(index, 1, ...processedComponentNodes);
         
         replaced = true;
-      } else if (TagPluginRegistry.get(componentName)) {
+      } else if (tagPluginRegistry.get(componentName)) {
         if (node.children && node.children.length > 0) {
-          const childrenProcessed = processChildrenDirectly(node.children, componentASTs, parentProps);
+          const childrenProcessed = processChildrenDirectly(node.children, componentASTs, parentProps, tagPluginRegistry);
           if (childrenProcessed) {
             replaced = true;
           }
@@ -399,19 +403,22 @@ function substitutePropsInExpression(
   return { value: currentExpression, isLiteral };
 }
 
-function inlineComponentsAndResolveProps(
+async function inlineComponentsAndResolveProps(
   node: Node,
   props: Record<string, any>,
   childrenContent: RootContent[],
-  componentASTs: ComponentASTs
-): Node | Node[] {
+  componentASTs: ComponentASTs,
+  tagPluginRegistry?: TagPluginRegistry
+): Promise<Node | Node[]> {
   if (
     node.type === NODE_TYPES.MDX_TEXT_EXPRESSION ||
     node.type === NODE_TYPES.MDX_FLOW_EXPRESSION
   ) {
     if ((node as any).value === 'props.children') {
       const childrenTree: Root = { type: 'root', children: [...childrenContent] };
-      inlineComponents(childrenTree, componentASTs);
+      if (tagPluginRegistry) {
+        await inlineComponents(childrenTree, componentASTs, tagPluginRegistry);
+      }
       return combinedNodesIntoParagraph(childrenTree.children);
     } else if ((node as any).value.includes('props.')) {
       const { value: resolvedValue, isLiteral } = substitutePropsInExpression(
@@ -450,7 +457,7 @@ function inlineComponentsAndResolveProps(
       ).flat();
 
       return processedComponentNodes;
-    } else if (TagPluginRegistry.get(componentName)) {
+    } else if (tagPluginRegistry && tagPluginRegistry.get(componentName)) {
       // For built-in tags, keep the tag but process its children
       const newNode = { ...node } as Parent;
       newNode.children = newNode.children.flatMap((child: any) =>

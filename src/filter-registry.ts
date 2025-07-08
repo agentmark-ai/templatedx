@@ -4,25 +4,25 @@ export type FilterFunction<Input = any, Output = any, Args extends any[] = any[]
 ) => Output;
 
 export class FilterRegistry {
-  private static filters: Map<string, FilterFunction> = new Map();
+  private filters: Map<string, FilterFunction> = new Map();
 
-  static register(name: string, filterFunction: FilterFunction): void {
+  register(name: string, filterFunction: FilterFunction): void {
     this.filters.set(name, filterFunction);
   }
 
-  static get(name: string): FilterFunction | undefined {
+  get(name: string): FilterFunction | undefined {
     return this.filters.get(name);
   }
 
-  static getAll(): Map<string, FilterFunction> {
+  getAll(): Map<string, FilterFunction> {
     return new Map(this.filters);
   }
 
-  static remove(name: string): void {
+  remove(name: string): void {
     this.filters.delete(name);
   }
 
-  static removeAll(): void {
+  removeAll(): void {
     this.filters.clear();
   }
 }
