@@ -79,13 +79,8 @@ export class ForEachPlugin extends TagPlugin {
         
         let finalChildren = resolvedChildren.flat();
         
-        // If componentASTs is available, inline components after variable resolution
-        if (componentASTs) {
-          const { inlineComponents } = await import('../bundler');
-          const tempTree = { type: 'root', children: finalChildren };
-          await inlineComponents(tempTree as any, componentASTs);
-          finalChildren = tempTree.children;
-        }
+        // Component inlining will be handled by the main bundler after transformation
+        // This ensures proper prop resolution context
         
         return finalChildren;
       })

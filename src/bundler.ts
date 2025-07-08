@@ -28,21 +28,19 @@ export async function bundle(
     contentLoader
   );
 
-  // First pass: inline components in the original tree
-  await inlineComponents(mainTree, componentASTs);
-
-  // If transform props are provided, run transformation which may create 
-  // new component references, then run bundling again
+  // If transform props are provided, run transformation first, then inline components
   if (transformProps || shared) {
     const { transformTree } = await import('./transformer');
     const transformedTree = await transformTree(mainTree, transformProps || {}, shared || {}, undefined, undefined, componentASTs);
     
-    // Second pass: inline any new components created during transformation
+    // Inline components after transformation when we have actual prop values
     await inlineComponents(transformedTree, componentASTs);
     
     return transformedTree;
   }
 
+  // Only inline components if no transformation is needed
+  await inlineComponents(mainTree, componentASTs);
   return mainTree;
 }
 
@@ -256,9 +254,11 @@ function substitutePropsInExpression(
       if (props.hasOwnProperty(propName)) {
         visitedProps.add(propName);
         const propValue = props[propName];
-        if (typeof propValue === 'string') {
+        if (typeof propValue === 'string' && propValue.includes('props.')) {
+          // Only recursively substitute if the string contains prop references
           return substitute(propValue);
         } else {
+          // For plain strings or non-string values, just return the string representation
           return String(propValue);
         }
       } else {
