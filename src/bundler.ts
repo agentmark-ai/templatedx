@@ -13,10 +13,17 @@ import {
 export async function bundle(
   mdxContent: string,
   baseDir: string,
-  contentLoader: ContentLoader,
-  transformProps?: Record<string, any>,
-  shared?: Record<string, any>
+  contentLoader: ContentLoader
 ): Promise<Root> {
+  const result = await bundleWithComponentASTs(mdxContent, baseDir, contentLoader);
+  return result.tree;
+}
+
+export async function bundleWithComponentASTs(
+  mdxContent: string,
+  baseDir: string,
+  contentLoader: ContentLoader
+): Promise<{ tree: Root; componentASTs: ComponentASTs }> {
   const processedFiles = new Set<string>();
   const mainAbsolutePath = resolvePath(baseDir, '__PROMPTDX_IGNORE__.mdx');
 
@@ -28,20 +35,10 @@ export async function bundle(
     contentLoader
   );
 
-  // If transform props are provided, run transformation first, then inline components
-  if (transformProps || shared) {
-    const { transformTree } = await import('./transformer');
-    const transformedTree = await transformTree(mainTree, transformProps || {}, shared || {}, undefined, undefined, componentASTs);
-    
-    // Inline components after transformation when we have actual prop values
-    await inlineComponents(transformedTree, componentASTs);
-    
-    return transformedTree;
-  }
-
-  // Only inline components if no transformation is needed
+  // Always inline components during bundling (build-time)
   await inlineComponents(mainTree, componentASTs);
-  return mainTree;
+  
+  return { tree: mainTree, componentASTs };
 }
 
 async function processMdxContent(
@@ -243,6 +240,22 @@ function substitutePropsInExpression(
   props: Record<string, any>,
 ): { value: string; isLiteral: boolean } {
   const propRegex = /props\.(\w+)/g;
+  
+  // Check if all props in the expression can be resolved
+  const matches = expression.match(propRegex);
+  if (matches) {
+    const hasUnresolvableProps = matches.some(match => {
+      const propName = match.replace('props.', '');
+      return !props.hasOwnProperty(propName);
+    });
+    
+    // If any props cannot be resolved, leave the expression unchanged
+    // This prevents circular references and allows runtime resolution
+    if (hasUnresolvableProps) {
+      return { value: expression, isLiteral: false };
+    }
+  }
+
   const visitedProps = new Set();
   let currentExpression = expression;
 

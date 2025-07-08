@@ -55,3 +55,6 @@ export {
   FilterRegistry,
   TemplatedX
 };
+
+// Export additional bundler utilities for advanced use cases
+export { bundleWithComponentASTs } from './bundler';

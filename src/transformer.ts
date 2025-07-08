@@ -82,6 +82,9 @@ export class NodeTransformer {
       const processedChildren = await Promise.all(
         (node as Parent).children.map(async (child) => {
           const childTransformer = new NodeTransformer(this.scope, this.tagPluginRegistry, this.filterRegistry);
+          if ((this as any).componentASTs) {
+            (childTransformer as any).componentASTs = (this as any).componentASTs;
+          }
           const result = await childTransformer.transformNode(child);
           return Array.isArray(result) ? result : [result];
         })
@@ -96,6 +99,9 @@ export class NodeTransformer {
       const processedChildren = await Promise.all(
         node.children.map(async (child) => {
           const childTransformer = new NodeTransformer(this.scope, this.tagPluginRegistry, this.filterRegistry);
+          if ((this as any).componentASTs) {
+            (childTransformer as any).componentASTs = (this as any).componentASTs;
+          }
           const result = await childTransformer.transformNode(child);
           return Array.isArray(result) ? result : [result];
         })
@@ -307,7 +313,13 @@ export class NodeTransformer {
       if (plugin) {
         const props = this.evaluateProps(node);
         const pluginContext: PluginContext = {
-          createNodeTransformer: (scope: Scope) => new NodeTransformer(scope, this.tagPluginRegistry, this.filterRegistry),
+          createNodeTransformer: (scope: Scope) => {
+            const transformer = new NodeTransformer(scope, this.tagPluginRegistry, this.filterRegistry);
+            if ((this as any).componentASTs) {
+              (transformer as any).componentASTs = (this as any).componentASTs;
+            }
+            return transformer;
+          },
           scope: this.scope,
           tagName,
           nodeHelpers,
@@ -315,12 +327,34 @@ export class NodeTransformer {
         };
         const result = await plugin.transform(props, node.children, pluginContext);
         return result;
+      } else if ((this as any).componentASTs && (this as any).componentASTs[tagName]) {
+        // Handle component inlining at runtime
+        const componentNodes = JSON.parse(JSON.stringify((this as any).componentASTs[tagName])); // Deep clone
+        const props = this.evaluateProps(node);
+        const childrenContent = node.children || [];
+
+        // Process each component node recursively
+        const processedNodes = await Promise.all(
+          componentNodes.map(async (componentNode: any) => {
+            const processed = await this.inlineComponentAndResolveProps(
+              componentNode,
+              props,
+              childrenContent
+            );
+            return Array.isArray(processed) ? processed : [processed];
+          })
+        );
+
+        return processedNodes.flat();
       } else {
         const newNode = { ...node } as Parent;
 
         const processedChildren = await Promise.all(
           node.children.map(async (child) => {
             const childTransformer = new NodeTransformer(this.scope, this.tagPluginRegistry, this.filterRegistry);
+            if ((this as any).componentASTs) {
+              (childTransformer as any).componentASTs = (this as any).componentASTs;
+            }
             const result = await childTransformer.transformNode(child);
             return Array.isArray(result) ? result : [result];
           })
@@ -334,6 +368,65 @@ export class NodeTransformer {
         `Error processing MDX JSX Element: ${(error as Error).message}`
       );
     }
+  }
+
+  private async inlineComponentAndResolveProps(
+    node: Node,
+    props: Record<string, any>,
+    childrenContent: RootContent[]
+  ): Promise<Node | Node[]> {
+    if (
+      node.type === NODE_TYPES.MDX_TEXT_EXPRESSION ||
+      node.type === NODE_TYPES.MDX_FLOW_EXPRESSION
+    ) {
+      const expression = (node as any).value;
+      if (expression === 'props.children') {
+        // Return children content
+        return childrenContent;
+      } else if (expression.includes('props.')) {
+        // Create a new scope with component props and resolve the expression
+        const componentScope = this.scope.createChild({ props });
+        const componentTransformer = new NodeTransformer(componentScope, this.tagPluginRegistry, this.filterRegistry);
+        (componentTransformer as any).componentASTs = (this as any).componentASTs;
+        
+        try {
+          const resolvedValue = componentTransformer.resolveExpression(expression);
+          return {
+            type: NODE_TYPES.TEXT,
+            value: stringifyValue(resolvedValue),
+          } as Node;
+        } catch (error) {
+          // If resolution fails, return the expression as-is
+          return node;
+        }
+      }
+    }
+
+    if (isMdxJsxElement(node)) {
+      // Process nested components with a new transformer that has component props
+      const componentScope = this.scope.createChild({ props });
+      const componentTransformer = new NodeTransformer(componentScope, this.tagPluginRegistry, this.filterRegistry);
+      (componentTransformer as any).componentASTs = (this as any).componentASTs;
+      return await componentTransformer.processMdxJsxElement(node);
+    }
+
+    if (isParentNode(node)) {
+      const newNode = { ...node } as Parent;
+      const processedChildren = await Promise.all(
+        (node as Parent).children.map(async (child) => {
+          const result = await this.inlineComponentAndResolveProps(
+            child,
+            props,
+            childrenContent
+          );
+          return Array.isArray(result) ? result : [result];
+        })
+      );
+      newNode.children = processedChildren.flat() as RootContent[];
+      return newNode;
+    }
+
+    return node;
   }
 
   evaluateProps(node: any): Record<string, any> {
