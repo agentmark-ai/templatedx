@@ -160,7 +160,12 @@ async function inlineComponents(
   do {
     hasReplacements = inlineJsxElements(tree, componentASTs);
   } while (hasReplacements);
+  
+  // After inlining components, ensure all function children have proper fragments
+  // This is handled during stringification instead
 }
+
+
 
 function processChildrenDirectly(
   children: any[],
@@ -257,7 +262,7 @@ function processSimpleJSXInExpression(
              }
            }
            
-           // Wrap in fragment tags to be valid JSX inside ForEach
+           // Wrap in fragment tags with proper alignment
            return `<>\n      ${headingPrefix}${headingContent}\n    </>`;
         }
       }
