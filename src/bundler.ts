@@ -200,6 +200,12 @@ function processChildrenDirectly(
           }
         }
       }
+    } else if (child.type === NODE_TYPES.MDX_FLOW_EXPRESSION || child.type === NODE_TYPES.MDX_TEXT_EXPRESSION) {
+      // Process JSX elements within expressions - simplified approach
+      const expressionProcessed = processSimpleJSXInExpression(child, componentASTs);
+      if (expressionProcessed) {
+        replaced = true;
+      }
     } else if (isParentNode(child)) {
       // For other parent nodes, recursively process their children
       const childrenProcessed = processChildrenDirectly(child.children, componentASTs, parentProps);
@@ -207,6 +213,58 @@ function processChildrenDirectly(
         replaced = true;
       }
     }
+  }
+  
+  return replaced;
+}
+
+function processSimpleJSXInExpression(
+  expressionNode: any,
+  componentASTs: ComponentASTs
+): boolean {
+  if (!expressionNode.value || typeof expressionNode.value !== 'string') {
+    return false;
+  }
+  
+  let replaced = false;
+  const expressionText = expressionNode.value;
+  let newExpressionText = expressionText;
+  
+  // Simple string-based replacement for JSX components
+  for (const [componentName, componentNodes] of Object.entries(componentASTs)) {
+    const jsxPattern = new RegExp(`<${componentName}([^>]*?)\\s*/>`, 'g');
+         const replacement = newExpressionText.replace(jsxPattern, (match: string, attributes: string) => {
+       // Extract the component content for simple heading cases only
+       if (componentNodes && componentNodes.length > 0) {
+         const firstNode = componentNodes[0];
+         if (firstNode.type === 'heading' && firstNode.children) {
+           // Reconstruct the heading with proper markdown syntax
+           const headingPrefix = '#'.repeat(firstNode.depth || 2) + ' ';
+           let headingContent = '';
+           
+           // Combine all children (text nodes and expressions)
+           for (const child of firstNode.children) {
+             if (child.type === 'text') {
+               headingContent += (child as any).value;
+             } else if (child.type === 'mdxTextExpression') {
+               headingContent += '{' + (child as any).value + '}';
+             }
+           }
+           
+           return headingPrefix + headingContent;
+         }
+       }
+       return match; // fallback to original if we can't inline
+     });
+    
+    if (replacement !== newExpressionText) {
+      newExpressionText = replacement;
+      replaced = true;
+    }
+  }
+  
+  if (replaced) {
+    expressionNode.value = newExpressionText;
   }
   
   return replaced;
@@ -392,7 +450,7 @@ function inlineComponentsAndResolveProps(
 
   if (isParentNode(node)) {
     const newNode = node as Parent;
-    newNode.children = newNode.children.flatMap((child) =>
+    newNode.children = newNode.children.flatMap((child: any) =>
       inlineComponentsAndResolveProps(
         child,
         props,

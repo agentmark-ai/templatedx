@@ -1,0 +1,7 @@
+import SimpleComponent from './simple-component.mdx';
+
+<ForEach arr={props.messageHistory}>
+  {(item) => (
+    <SimpleComponent item={props.msg} />
+  )}
+</ForEach>
