@@ -9,6 +9,7 @@ import {
   isParentNode,
   parse,
 } from './ast-utils';
+import { TagPluginRegistry } from './tag-plugin-registry';
 
 export async function bundle(
   mdxContent: string,
@@ -161,6 +162,56 @@ async function inlineComponents(
   } while (hasReplacements);
 }
 
+function processChildrenDirectly(
+  children: any[],
+  componentASTs: ComponentASTs,
+  parentProps: Record<string, any> = {}
+): boolean {
+  let replaced = false;
+  
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i];
+    
+    if (isMdxJsxElement(child)) {
+      const componentName = child.name;
+      if (componentName && componentASTs[componentName]) {
+        const componentNodes = cloneObject(componentASTs[componentName]);
+        const props = extractRawProps(child, parentProps);
+        const childrenContent = child.children || [];
+
+        const processedComponentNodes = componentNodes.map((childNode: any) =>
+          inlineComponentsAndResolveProps(
+            childNode,
+            props,
+            childrenContent,
+            componentASTs
+          )
+        );
+
+        children.splice(i, 1, ...processedComponentNodes.flat());
+        replaced = true;
+        i += processedComponentNodes.flat().length - 1; // Adjust index for replaced nodes
+      } else if (componentName && TagPluginRegistry.get(componentName)) {
+        // For built-in tags, recursively process their children
+        if (child.children && child.children.length > 0) {
+          const childrenProcessed = processChildrenDirectly(child.children, componentASTs, parentProps);
+          if (childrenProcessed) {
+            replaced = true;
+          }
+        }
+      }
+    } else if (isParentNode(child)) {
+      // For other parent nodes, recursively process their children
+      const childrenProcessed = processChildrenDirectly(child.children, componentASTs, parentProps);
+      if (childrenProcessed) {
+        replaced = true;
+      }
+    }
+  }
+  
+  return replaced;
+}
+
 function inlineJsxElements(
   tree: Root | Parent,
   componentASTs: ComponentASTs,
@@ -173,6 +224,10 @@ function inlineJsxElements(
     [NODE_TYPES.MDX_JSX_FLOW_ELEMENT, NODE_TYPES.MDX_JSX_TEXT_ELEMENT],
     (node: any, index, parent) => {
       const componentName = node.name;
+      if (!componentName || index === null || !parent) {
+        return;
+      }
+      
       if (componentASTs[componentName]) {
         const componentNodes = cloneObject(componentASTs[componentName]);
         const props = extractRawProps(node, parentProps);
@@ -189,6 +244,14 @@ function inlineJsxElements(
 
         parent.children.splice(index, 1, ...processedComponentNodes.flat());
         replaced = true;
+      } else if (TagPluginRegistry.get(componentName)) {
+        // For built-in tags (like ForEach), keep the tag but process its children
+        if (node.children && node.children.length > 0) {
+          const childrenProcessed = processChildrenDirectly(node.children, componentASTs, parentProps);
+          if (childrenProcessed) {
+            replaced = true;
+          }
+        }
       }
     }
   );
@@ -312,6 +375,18 @@ function inlineComponentsAndResolveProps(
       );
 
       return processedComponentNodes.flat();
+    } else if (TagPluginRegistry.get(componentName)) {
+      // For built-in tags, keep the tag but process its children
+      const newNode = { ...node } as Parent;
+      newNode.children = newNode.children.flatMap((child: any) =>
+        inlineComponentsAndResolveProps(
+          child,
+          props,
+          childrenContent,
+          componentASTs
+        )
+      ) as RootContent[];
+      return newNode;
     }
   }
 
