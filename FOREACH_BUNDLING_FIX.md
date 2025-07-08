@@ -46,14 +46,27 @@ export async function bundle(
 ): Promise<Root>
 ```
 
-### 2. Integrated Transformation with Bundling
+### 2. Enhanced Transform Tree Method
+
+Updated existing `transformTree()` to optionally accept componentASTs:
+
+```typescript
+export const transformTree = async (
+  tree: Root,
+  props: Record<string, any> = {},
+  shared: Record<string, any> = {},
+  componentASTs?: any                   // NEW
+): Promise<Root>
+```
+
+### 3. Integrated Transformation with Bundling
 
 When transform props are provided, the bundler now:
 1. Performs initial component bundling
-2. Runs tag plugin transformations (including ForEach)
+2. Runs tag plugin transformations (including ForEach) with componentASTs access
 3. Performs **recursive component bundling** on transformed content
 
-### 3. Enhanced ForEach Plugin
+### 4. Enhanced ForEach Plugin
 
 Updated ForEach plugin to handle component bundling within its scope:
 - Added `componentASTs` to plugin context
@@ -104,9 +117,9 @@ const tree = await parse(input, baseDir, loader, transformProps);
 
 ## Files Modified
 
-1. `src/bundler.ts` - Enhanced to support recursive bundling
-2. `src/transformer.ts` - Added componentASTs support
-3. `src/tag-plugins/for-each.ts` - Enhanced to handle component bundling
+1. `src/bundler.ts` - Enhanced to support recursive bundling with transformation
+2. `src/transformer.ts` - Enhanced existing `transformTree()` to accept componentASTs
+3. `src/tag-plugins/for-each.ts` - Enhanced to handle component bundling within scope
 4. `src/tag-plugin.ts` - Added componentASTs to plugin context
 5. `src/test/for-each-bundle-working/` - Working test suite
 
