@@ -35,7 +35,7 @@ export async function bundle(
   // new component references, then run bundling again
   if (transformProps || shared) {
     const { transformTree } = await import('./transformer');
-    const transformedTree = await transformTree(mainTree, transformProps || {}, shared || {}, componentASTs);
+    const transformedTree = await transformTree(mainTree, transformProps || {}, shared || {}, undefined, undefined, componentASTs);
     
     // Second pass: inline any new components created during transformation
     await inlineComponents(transformedTree, componentASTs);
