@@ -161,9 +161,6 @@ async function inlineComponents(
   do {
     hasReplacements = inlineJsxElements(tree, componentASTs);
   } while (hasReplacements);
-  
-  // After inlining components, ensure all function children have proper fragments
-  // This is handled during stringification instead
 }
 
 
@@ -196,9 +193,8 @@ function processChildrenDirectly(
 
         children.splice(i, 1, ...processedComponentNodes.flat());
         replaced = true;
-        i += processedComponentNodes.flat().length - 1; // Adjust index for replaced nodes
+        i += processedComponentNodes.flat().length - 1;
       } else if (componentName && TagPluginRegistry.get(componentName)) {
-        // For built-in tags, recursively process their children
         if (child.children && child.children.length > 0) {
           const childrenProcessed = processChildrenDirectly(child.children, componentASTs, parentProps);
           if (childrenProcessed) {
@@ -207,13 +203,11 @@ function processChildrenDirectly(
         }
       }
     } else if (child.type === NODE_TYPES.MDX_FLOW_EXPRESSION || child.type === NODE_TYPES.MDX_TEXT_EXPRESSION) {
-      // Process JSX elements within expressions - simplified approach
       const expressionProcessed = processSimpleJSXInExpression(child, componentASTs);
       if (expressionProcessed) {
         replaced = true;
       }
     } else if (isParentNode(child)) {
-      // For other parent nodes, recursively process their children
       const childrenProcessed = processChildrenDirectly(child.children, componentASTs, parentProps);
       if (childrenProcessed) {
         replaced = true;
@@ -243,12 +237,9 @@ function processSimpleJSXInExpression(
   }
 
   try {
-    // Parse the expression content as MDX
     const tempTree = parse(expressionNode.value);
     let wasModified = false;
 
-    // Process components by replacing them with their content
-    // If component is not inside a fragment, wrap it
     visit(tempTree, [NODE_TYPES.MDX_JSX_FLOW_ELEMENT, NODE_TYPES.MDX_JSX_TEXT_ELEMENT], (node: any, index, parent) => {
       const componentName = node.name;
       if (!componentName || !parent || index === null) {
@@ -263,14 +254,11 @@ function processSimpleJSXInExpression(
           inlineComponentsAndResolveProps(childNode, props, [], componentASTs)
         ).flat();
         
-        // Check if this component's parent is a fragment
         const parentIsFragment = parent.type === NODE_TYPES.MDX_JSX_FLOW_ELEMENT && parent.name === null;
         
         if (parentIsFragment) {
-          // If parent is fragment, just replace with content (no additional wrapping)
           parent.children.splice(index, 1, ...processedComponentNodes);
         } else {
-          // If not in a fragment, wrap the processed content in a fragment
           const fragment = createFragment(processedComponentNodes);
           parent.children.splice(index, 1, fragment);
         }
@@ -281,13 +269,11 @@ function processSimpleJSXInExpression(
     });
 
     if (wasModified) {
-      // Convert back to string and update the expression
       expressionNode.value = stringify(tempTree).trim();
     }
 
     return wasModified;
   } catch (e) {
-    // If parsing fails, leave expression unchanged
     return false;
   }
 }
@@ -335,7 +321,6 @@ function inlineJsxElements(
         
         replaced = true;
       } else if (TagPluginRegistry.get(componentName)) {
-        // For built-in tags (like ForEach), keep the tag but process its children
         if (node.children && node.children.length > 0) {
           const childrenProcessed = processChildrenDirectly(node.children, componentASTs, parentProps);
           if (childrenProcessed) {
