@@ -13,9 +13,7 @@ import {
 export async function bundle(
   mdxContent: string,
   baseDir: string,
-  contentLoader: ContentLoader,
-  transformProps?: Record<string, any>,
-  shared?: Record<string, any>
+  contentLoader: ContentLoader
 ): Promise<Root> {
   const processedFiles = new Set<string>();
   const mainAbsolutePath = resolvePath(baseDir, '__PROMPTDX_IGNORE__.mdx');
@@ -28,20 +26,10 @@ export async function bundle(
     contentLoader
   );
 
-  // First pass: inline components in the original tree
   await inlineComponents(mainTree, componentASTs);
 
-  // If transform props are provided, run transformation which may create 
-  // new component references, then run bundling again
-  if (transformProps || shared) {
-    const { transformTree } = await import('./transformer');
-    const transformedTree = await transformTree(mainTree, transformProps || {}, shared || {}, componentASTs);
-    
-    // Second pass: inline any new components created during transformation
-    await inlineComponents(transformedTree, componentASTs);
-    
-    return transformedTree;
-  }
+  // Store componentASTs globally for transformer access
+  (global as any).__PROMPTDX_COMPONENT_ASTS__ = componentASTs;
 
   return mainTree;
 }
