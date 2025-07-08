@@ -1,5 +1,5 @@
 import { transformTree } from "./transformer";
-import { bundle } from "./bundler";
+import { bundle, bundleWithComponents } from "./bundler";
 import {
   compressAst,
   stringify,
@@ -35,6 +35,17 @@ async function load (path: string) {
   return bundle(file, getDirname(path), componentLoader);
 }
 
+async function parseWithComponentSupport(
+  mdxContent: string,
+  baseDir: string,
+  contentLoader: ContentLoader,
+  props: Record<string, any> = {},
+  shared: Record<string, any> = {}
+): Promise<Root> {
+  const { tree, componentASTs } = await bundleWithComponents(mdxContent, baseDir, contentLoader);
+  return transformTree(tree, props, shared, componentASTs);
+}
+
 export type {
   ContentLoader,
   Root as Ast,
@@ -45,6 +56,7 @@ export type {
 export {
   stringify,
   bundle as parse,
+  parseWithComponentSupport,
   getFrontMatter,
   compressAst,
   load,

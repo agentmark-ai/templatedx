@@ -49,9 +49,11 @@ const nodeHelpers = {
 
 export class NodeTransformer {
   private scope: Scope;
+  private componentASTs?: Record<string, any>;
 
-  constructor(scope: Scope) {
+  constructor(scope: Scope, componentASTs?: Record<string, any>) {
     this.scope = scope;
+    this.componentASTs = componentASTs;
   }
 
   async transformNode(node: Node): Promise<Node | Node[]> {
@@ -69,7 +71,7 @@ export class NodeTransformer {
     if (this.isFragmentNode(node)) {
       const processedChildren = await Promise.all(
         (node as Parent).children.map(async (child) => {
-          const childTransformer = new NodeTransformer(this.scope);
+          const childTransformer = new NodeTransformer(this.scope, this.componentASTs);
           const result = await childTransformer.transformNode(child);
           return Array.isArray(result) ? result : [result];
         })
@@ -83,7 +85,7 @@ export class NodeTransformer {
 
       const processedChildren = await Promise.all(
         node.children.map(async (child) => {
-          const childTransformer = new NodeTransformer(this.scope);
+          const childTransformer = new NodeTransformer(this.scope, this.componentASTs);
           const result = await childTransformer.transformNode(child);
           return Array.isArray(result) ? result : [result];
         })
@@ -285,6 +287,44 @@ export class NodeTransformer {
     }
   }
 
+  private async inlineComponents(nodes: Node[]): Promise<Node[]> {
+    if (!this.componentASTs) {
+      return nodes;
+    }
+    
+    const { inlineComponentsAndResolveProps } = await import('./bundler');
+    const componentASTs = this.componentASTs; // Store in local variable for type safety
+    
+    return nodes.map(node => {
+      if (isMdxJsxElement(node) && componentASTs[node.name!]) {
+        // Extract props from the component node, resolving expressions using the current scope
+        const rawProps: Record<string, any> = {};
+        
+        for (const attr of (node as any).attributes) {
+          if (attr.type === MDX_JSX_ATTRIBUTE_TYPES.MDX_JSX_ATTRIBUTE) {
+            if (attr.value === null || typeof attr.value === 'string') {
+              rawProps[attr.name] = JSON.stringify(attr.value || '');
+            } else if (attr.value && attr.value.type === MDX_JSX_ATTRIBUTE_TYPES.MDX_JSX_ATTRIBUTE_VALUE_EXPRESSION) {
+              // Resolve the expression using the current scope
+              try {
+                const resolvedValue = this.resolveExpression(attr.value.value);
+                rawProps[attr.name] = JSON.stringify(resolvedValue);
+              } catch (error) {
+                // If resolution fails, keep the original expression
+                rawProps[attr.name] = attr.value.value;
+              }
+            }
+          }
+        }
+        
+        const childrenContent = (node as any).children || [];
+        
+        return inlineComponentsAndResolveProps(node, rawProps, childrenContent, componentASTs);
+      }
+      return node;
+    }).flat();
+  }
+
   async processMdxJsxElement(
     node: MdxJsxFlowElement | MdxJsxTextElement
   ): Promise<Node | Node[]> {
@@ -294,10 +334,11 @@ export class NodeTransformer {
       if (plugin) {
         const props = this.evaluateProps(node);
         const pluginContext: PluginContext = {
-          createNodeTransformer: (scope: Scope) => new NodeTransformer(scope),
+          createNodeTransformer: (scope: Scope) => new NodeTransformer(scope, this.componentASTs),
           scope: this.scope,
           tagName,
           nodeHelpers,
+          inlineComponents: this.componentASTs ? this.inlineComponents.bind(this) : undefined,
         };
         const result = await plugin.transform(props, node.children, pluginContext);
         return result;
@@ -306,7 +347,7 @@ export class NodeTransformer {
 
         const processedChildren = await Promise.all(
           node.children.map(async (child) => {
-            const childTransformer = new NodeTransformer(this.scope);
+            const childTransformer = new NodeTransformer(this.scope, this.componentASTs);
             const result = await childTransformer.transformNode(child);
             return Array.isArray(result) ? result : [result];
           })
@@ -353,9 +394,10 @@ export const transformTree = async (
   tree: Root,
   props: Record<string, any> = {},
   shared: Record<string, any> = {},
+  componentASTs?: Record<string, any>
 ): Promise<Root> => {
   const scope = new Scope({ props }, shared);
-  const transformer = new NodeTransformer(scope);
+  const transformer = new NodeTransformer(scope, componentASTs);
   const processedTree = await transformer.transformNode(tree);
   return processedTree as Root;
 };

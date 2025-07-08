@@ -68,13 +68,32 @@ export class ForEachPlugin extends TagPlugin {
           ...(indexParamName && { [indexParamName]: index }),
         });
         const itemTransformer = createNodeTransformer(itemScope);
-        const processedChildren = await Promise.all(
+        
+        // Process the function body
+        let processedChildren = await Promise.all(
           body.map(async (child) => {
             const result = await itemTransformer.transformNode(child);
             return Array.isArray(result) ? result : [result];
           })
         );
-        return processedChildren.flat();
+        
+        let flattenedChildren = processedChildren.flat();
+        
+        // Inline components using the itemTransformer that has the correct scope
+        // Instead of using the context.inlineComponents which uses wrong scope
+        if ((itemTransformer as any).inlineComponents) {
+          flattenedChildren = await (itemTransformer as any).inlineComponents(flattenedChildren);
+        }
+        
+        // After component inlining, process the nodes again to resolve any remaining expressions
+        const finalProcessedChildren = await Promise.all(
+          flattenedChildren.map(async (child) => {
+            const result = await itemTransformer.transformNode(child);
+            return Array.isArray(result) ? result : [result];
+          })
+        );
+        
+        return finalProcessedChildren.flat();
       })
     );
     const resultNodes = resultNodesPerItem.flat();

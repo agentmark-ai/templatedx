@@ -18,6 +18,7 @@ export interface PluginContext {
   createNodeTransformer: (scope: Scope) => any;
   scope: Scope;
   tagName: string;
+  inlineComponents?: (nodes: Node[]) => Promise<Node[]>;
 }
 
 export abstract class TagPlugin<Props = Record<string, any>> {

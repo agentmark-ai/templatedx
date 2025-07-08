@@ -31,6 +31,26 @@ export async function bundle(
   return mainTree;
 }
 
+export async function bundleWithComponents(
+  mdxContent: string,
+  baseDir: string,
+  contentLoader: ContentLoader
+): Promise<{ tree: Root; componentASTs: ComponentASTs }> {
+  const processedFiles = new Set<string>();
+  const mainAbsolutePath = resolvePath(baseDir, '__PROMPTDX_IGNORE__.mdx');
+
+  const { tree: mainTree, componentASTs } = await processMdxContent(
+    mdxContent,
+    mainAbsolutePath,
+    new Set(),
+    processedFiles,
+    contentLoader
+  );
+
+  // Don't inline components here - we'll do it during transformation
+  return { tree: mainTree, componentASTs };
+}
+
 async function processMdxContent(
   content: string,
   absolutePath: string,
@@ -196,7 +216,7 @@ function inlineJsxElements(
   return replaced;
 }
 
-function extractRawProps(
+export function extractRawProps(
   node: any,
   parentProps: Record<string, any>
 ): Record<string, any> {
@@ -223,7 +243,7 @@ function extractRawProps(
   return props;
 }
 
-function substitutePropsInExpression(
+export function substitutePropsInExpression(
   expression: string,
   props: Record<string, any>,
 ): { value: string; isLiteral: boolean } {
@@ -261,7 +281,73 @@ function substitutePropsInExpression(
   return { value: currentExpression, isLiteral };
 }
 
-function inlineComponentsAndResolveProps(
+// Enhanced version for nested props - used specifically by ForEach
+export function substitutePropsInExpressionEnhanced(
+  expression: string,
+  props: Record<string, any>,
+): { value: string; isLiteral: boolean } {
+  const propRegex = /props\.([a-zA-Z_$][a-zA-Z0-9_$]*(?:\.[a-zA-Z_$][a-zA-Z0-9_$]*)*)/g;
+  const visitedProps = new Set();
+  let currentExpression = expression;
+
+  const substitute = (expr: string): string => {
+    return expr.replace(propRegex, (match, propPath) => {
+      if (visitedProps.has(propPath)) {
+        throw new Error(`Circular reference detected for property '${propPath}'.`);
+      }
+      
+      const pathParts = propPath.split('.');
+      const topLevelProp = pathParts[0];
+      
+      if (props.hasOwnProperty(topLevelProp)) {
+        visitedProps.add(propPath);
+        
+        // Start with the top-level prop value
+        let propValue = props[topLevelProp];
+        
+        // If the top-level prop value is a string that looks like JSON, try to parse it
+        if (typeof propValue === 'string') {
+          try {
+            propValue = JSON.parse(propValue);
+          } catch (error) {
+            // If parsing fails, use the string value as is
+          }
+        }
+        
+        // Navigate through the remaining path parts
+        for (let i = 1; i < pathParts.length; i++) {
+          const part = pathParts[i];
+          if (propValue && typeof propValue === 'object' && part in propValue) {
+            propValue = propValue[part];
+          } else {
+            // If we can't navigate to the property, return the original match
+            return match;
+          }
+        }
+        
+        if (typeof propValue === 'string') {
+          return substitute(propValue);
+        } else {
+          return String(propValue);
+        }
+      } else {
+        return match;
+      }
+    });
+  };
+
+  try {
+    currentExpression = substitute(currentExpression);
+  } catch (error) {
+    throw new Error(`Error substituting props in expression: ${(error as Error).message}`);
+  }
+
+  const isLiteral = /^['"].*['"]$|^\d+(\.\d+)?$/.test(currentExpression);
+
+  return { value: currentExpression, isLiteral };
+}
+
+export function inlineComponentsAndResolveProps(
   node: Node,
   props: Record<string, any>,
   childrenContent: RootContent[],
@@ -276,7 +362,7 @@ function inlineComponentsAndResolveProps(
       inlineComponents(childrenTree, componentASTs);
       return combinedNodesIntoParagraph(childrenTree.children);
     } else if ((node as any).value.includes('props.')) {
-      const { value: resolvedValue, isLiteral } = substitutePropsInExpression(
+      const { value: resolvedValue, isLiteral } = substitutePropsInExpressionEnhanced(
         (node as any).value,
         props
       );
@@ -288,7 +374,7 @@ function inlineComponentsAndResolveProps(
         } as Node;
       } else {
         return {
-          type: node.type,
+          type: NODE_TYPES.TEXT,
           value: resolvedValue,
         } as Node;
       }
@@ -299,13 +385,14 @@ function inlineComponentsAndResolveProps(
     const componentName = node.name!;
     if (componentASTs[componentName]) {
       const componentNodes = cloneObject(componentASTs[componentName]);
-      const newProps = extractRawProps(node, props);
+      // Use the props passed in directly instead of re-extracting them
+      // This allows the transformer to provide correctly resolved props
       const childrenContent = node.children || [];
 
       const processedComponentNodes = componentNodes.map((childNode: any) =>
         inlineComponentsAndResolveProps(
           childNode,
-          newProps,
+          props, // Use the props as provided, don't re-extract
           childrenContent,
           componentASTs
         )
@@ -330,7 +417,7 @@ function inlineComponentsAndResolveProps(
   return node;
 }
 
-function combinedNodesIntoParagraph(nodes: RootContent[]): RootContent[] {
+export function combinedNodesIntoParagraph(nodes: RootContent[]): RootContent[] {
   const contentChildren: RootContent[] = [];
 
   nodes.forEach((node, index) => {
