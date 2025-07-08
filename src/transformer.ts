@@ -55,9 +55,11 @@ const createNodeHelpers = (componentASTs?: any) => ({
 
 export class NodeTransformer {
   private scope: Scope;
+  private componentASTs: any;
 
-  constructor(scope: Scope) {
+  constructor(scope: Scope, componentASTs?: any) {
     this.scope = scope;
+    this.componentASTs = componentASTs;
   }
 
   async transformNode(node: Node): Promise<Node | Node[]> {
@@ -75,7 +77,7 @@ export class NodeTransformer {
     if (this.isFragmentNode(node)) {
       const processedChildren = await Promise.all(
         (node as Parent).children.map(async (child) => {
-          const childTransformer = new NodeTransformer(this.scope);
+          const childTransformer = new NodeTransformer(this.scope, this.componentASTs);
           const result = await childTransformer.transformNode(child);
           return Array.isArray(result) ? result : [result];
         })
@@ -89,7 +91,7 @@ export class NodeTransformer {
 
       const processedChildren = await Promise.all(
         node.children.map(async (child) => {
-          const childTransformer = new NodeTransformer(this.scope);
+          const childTransformer = new NodeTransformer(this.scope, this.componentASTs);
           const result = await childTransformer.transformNode(child);
           return Array.isArray(result) ? result : [result];
         })
@@ -299,13 +301,13 @@ export class NodeTransformer {
       const plugin = TagPluginRegistry.get(tagName);
       if (plugin) {
         const props = this.evaluateProps(node);
-        const nodeHelpers = createNodeHelpers((this as any).componentASTs);
+        const nodeHelpers = createNodeHelpers(this.componentASTs);
         const pluginContext: PluginContext = {
-          createNodeTransformer: (scope: Scope) => new NodeTransformer(scope),
+          createNodeTransformer: (scope: Scope) => new NodeTransformer(scope, this.componentASTs),
           scope: this.scope,
           tagName,
           nodeHelpers,
-          componentASTs: (this as any).componentASTs,
+          componentASTs: this.componentASTs,
         };
         const result = await plugin.transform(props, node.children, pluginContext);
         return result;
@@ -314,7 +316,7 @@ export class NodeTransformer {
 
         const processedChildren = await Promise.all(
           node.children.map(async (child) => {
-            const childTransformer = new NodeTransformer(this.scope);
+            const childTransformer = new NodeTransformer(this.scope, this.componentASTs);
             const result = await childTransformer.transformNode(child);
             return Array.isArray(result) ? result : [result];
           })
@@ -364,13 +366,11 @@ export const transformTree = async (
   componentASTs?: any
 ): Promise<Root> => {
   const scope = new Scope({ props }, shared);
-  const transformer = new NodeTransformer(scope);
   
-  // If componentASTs is provided, attach it to the transformer
-  if (componentASTs) {
-    (transformer as any).componentASTs = componentASTs;
-  }
+  // Use provided componentASTs or fall back to global ones from bundler
+  const actualComponentASTs = componentASTs || (global as any).__PROMPTDX_COMPONENT_ASTS__;
   
+  const transformer = new NodeTransformer(scope, actualComponentASTs);
   const processedTree = await transformer.transformNode(tree);
   return processedTree as Root;
 };
