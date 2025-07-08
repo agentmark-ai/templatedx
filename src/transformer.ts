@@ -49,9 +49,21 @@ const nodeHelpers = {
 
 export class NodeTransformer {
   private scope: Scope;
+  private tagPluginRegistry: TagPluginRegistry;
+  private filterRegistry: FilterRegistry;
 
-  constructor(scope: Scope) {
+  constructor(scope: Scope, tagPluginRegistry?: TagPluginRegistry, filterRegistry?: FilterRegistry) {
     this.scope = scope;
+    this.tagPluginRegistry = tagPluginRegistry || new TagPluginRegistry();
+    this.filterRegistry = filterRegistry || new FilterRegistry();
+    
+    // If no registries provided, copy from static (backward compatibility)
+    if (!tagPluginRegistry) {
+      this.tagPluginRegistry.copyFromStatic();
+    }
+    if (!filterRegistry) {
+      this.filterRegistry.copyFromStatic();
+    }
   }
 
   async transformNode(node: Node): Promise<Node | Node[]> {
@@ -69,7 +81,7 @@ export class NodeTransformer {
     if (this.isFragmentNode(node)) {
       const processedChildren = await Promise.all(
         (node as Parent).children.map(async (child) => {
-          const childTransformer = new NodeTransformer(this.scope);
+          const childTransformer = new NodeTransformer(this.scope, this.tagPluginRegistry, this.filterRegistry);
           const result = await childTransformer.transformNode(child);
           return Array.isArray(result) ? result : [result];
         })
@@ -83,7 +95,7 @@ export class NodeTransformer {
 
       const processedChildren = await Promise.all(
         node.children.map(async (child) => {
-          const childTransformer = new NodeTransformer(this.scope);
+          const childTransformer = new NodeTransformer(this.scope, this.tagPluginRegistry, this.filterRegistry);
           const result = await childTransformer.transformNode(child);
           return Array.isArray(result) ? result : [result];
         })
@@ -192,7 +204,7 @@ export class NodeTransformer {
     }
 
     const functionName = (callee as jsep.Identifier).name;
-    const filterFunction = FilterRegistry.get(functionName);
+    const filterFunction = this.filterRegistry.get(functionName);
     if (!filterFunction) {
       throw new Error(`Filter "${functionName}" is not registered.`);
     }
@@ -290,11 +302,11 @@ export class NodeTransformer {
   ): Promise<Node | Node[]> {
     try {
       const tagName = node.name!;
-      const plugin = TagPluginRegistry.get(tagName);
+      const plugin = this.tagPluginRegistry.get(tagName);
       if (plugin) {
         const props = this.evaluateProps(node);
         const pluginContext: PluginContext = {
-          createNodeTransformer: (scope: Scope) => new NodeTransformer(scope),
+          createNodeTransformer: (scope: Scope) => new NodeTransformer(scope, this.tagPluginRegistry, this.filterRegistry),
           scope: this.scope,
           tagName,
           nodeHelpers,
@@ -306,7 +318,7 @@ export class NodeTransformer {
 
         const processedChildren = await Promise.all(
           node.children.map(async (child) => {
-            const childTransformer = new NodeTransformer(this.scope);
+            const childTransformer = new NodeTransformer(this.scope, this.tagPluginRegistry, this.filterRegistry);
             const result = await childTransformer.transformNode(child);
             return Array.isArray(result) ? result : [result];
           })
@@ -353,9 +365,11 @@ export const transformTree = async (
   tree: Root,
   props: Record<string, any> = {},
   shared: Record<string, any> = {},
+  tagPluginRegistry?: TagPluginRegistry,
+  filterRegistry?: FilterRegistry,
 ): Promise<Root> => {
   const scope = new Scope({ props }, shared);
-  const transformer = new NodeTransformer(scope);
+  const transformer = new NodeTransformer(scope, tagPluginRegistry, filterRegistry);
   const processedTree = await transformer.transformNode(tree);
   return processedTree as Root;
 };

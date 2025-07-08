@@ -5,7 +5,9 @@ export type FilterFunction<Input = any, Output = any, Args extends any[] = any[]
 
 export class FilterRegistry {
   private static filters: Map<string, FilterFunction> = new Map();
+  private filters: Map<string, FilterFunction> = new Map();
 
+  // Static methods for backward compatibility
   static register(name: string, filterFunction: FilterFunction): void {
     this.filters.set(name, filterFunction);
   }
@@ -24,5 +26,33 @@ export class FilterRegistry {
 
   static removeAll(): void {
     this.filters.clear();
+  }
+
+  // Instance methods for stateful usage
+  register(name: string, filterFunction: FilterFunction): void {
+    this.filters.set(name, filterFunction);
+  }
+
+  get(name: string): FilterFunction | undefined {
+    return this.filters.get(name);
+  }
+
+  getAll(): Map<string, FilterFunction> {
+    return new Map(this.filters);
+  }
+
+  remove(name: string): void {
+    this.filters.delete(name);
+  }
+
+  removeAll(): void {
+    this.filters.clear();
+  }
+
+  // Copy filters from static registry (for built-ins)
+  copyFromStatic(): void {
+    FilterRegistry.filters.forEach((filter, name) => {
+      this.filters.set(name, filter);
+    });
   }
 }

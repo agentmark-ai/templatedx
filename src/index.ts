@@ -15,6 +15,7 @@ import { getDirname } from "./utils";
 import type { BaseMDXProvidedComponents } from './types';
 import './global.d';
 import './register-builtin-plugins';
+import { TemplatedX } from './templatedx';
 
 const readFile = async (path: string) => {
   // @ts-ignore
@@ -51,5 +52,6 @@ export {
   transformTree as transform,
   TagPluginRegistry,
   TagPlugin,
-  FilterRegistry
+  FilterRegistry,
+  TemplatedX
 };
