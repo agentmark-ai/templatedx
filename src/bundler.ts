@@ -8,7 +8,6 @@ import {
   isMdxJsxElement,
   isParentNode,
   parse,
-  stringify,
 } from './ast-utils';
 import { TagPluginRegistry } from './tag-plugin-registry';
 
@@ -228,66 +227,83 @@ function processSimpleJSXInExpression(
   expressionNode: any,
   componentASTs: ComponentASTs
 ): boolean {
-  // For expressions containing JSX components, parse and process them properly
   if (!expressionNode.value || typeof expressionNode.value !== 'string') {
     return false;
   }
-
-  // Check if expression contains any known component names
-  const hasComponents = Object.keys(componentASTs).some(name => 
-    expressionNode.value.includes(`<${name}`)
-  );
   
-  if (!hasComponents) {
-    return false;
-  }
-
-  try {
-    // Parse the expression content as MDX
-    const tempTree = parse(expressionNode.value);
-    let wasModified = false;
-
-    // Process components and wrap results in fragments
-    visit(tempTree, [NODE_TYPES.MDX_JSX_FLOW_ELEMENT, NODE_TYPES.MDX_JSX_TEXT_ELEMENT], (node: any, index, parent) => {
-      const componentName = node.name;
-      if (!componentName || !parent || index === null) {
-        return;
+  let replaced = false;
+  const expressionText = expressionNode.value;
+  let newExpressionText = expressionText;
+  
+  // Parse JSX components and inline them with proper prop substitution
+  for (const [componentName, componentNodes] of Object.entries(componentASTs)) {
+    const jsxPattern = new RegExp(`<${componentName}([^>]*?)\\s*/>`, 'g');
+    const replacement = newExpressionText.replace(jsxPattern, (match: string, attributes: string) => {
+      // Extract the component content and apply prop substitution
+      if (componentNodes && componentNodes.length > 0) {
+        const firstNode = componentNodes[0];
+        if (firstNode.type === 'heading' && firstNode.children) {
+          // Parse props from JSX attributes
+          const props = parseJSXAttributes(attributes);
+          
+          // Reconstruct the heading with proper markdown syntax and prop substitution
+          const headingPrefix = '#'.repeat(firstNode.depth || 2) + ' ';
+          let headingContent = '';
+          
+                     // Combine all children (text nodes and expressions) with prop substitution
+           for (const child of firstNode.children) {
+             if (child.type === 'text') {
+               headingContent += (child as any).value;
+             } else if (child.type === 'mdxTextExpression') {
+               const expression = (child as any).value;
+               // Apply prop substitution to expressions
+               const { value: substitutedExpression } = substitutePropsInExpression(expression, props);
+               headingContent += '{' + substitutedExpression + '}';
+             }
+           }
+           
+           // Wrap in fragment tags with proper alignment
+           return `<>\n      ${headingPrefix}${headingContent}\n    </>`;
+        }
       }
-      
-      if (componentASTs[componentName]) {
-        const componentNodes = cloneObject(componentASTs[componentName]);
-        const props = extractRawProps(node, {});
-        
-        const processedComponentNodes = componentNodes.map((childNode: any) =>
-          inlineComponentsAndResolveProps(childNode, props, [], componentASTs)
-        ).flat();
-        
-        // Wrap in fragment since we're in a JSX expression context
-        const fragment = createFragment(processedComponentNodes);
-        parent.children.splice(index, 1, fragment);
-        wasModified = true;
-      }
+      return match; // fallback to original if we can't inline
     });
-
-    if (wasModified) {
-      // Convert back to string and update the expression
-      expressionNode.value = stringify(tempTree).trim();
+    
+    if (replacement !== newExpressionText) {
+      newExpressionText = replacement;
+      replaced = true;
     }
-
-    return wasModified;
-  } catch (e) {
-    // If parsing fails, leave expression unchanged
-    return false;
   }
+  
+  if (replaced) {
+    expressionNode.value = newExpressionText;
+  }
+  
+  return replaced;
 }
 
-function createFragment(children: Node[]): Node {
-  return {
-    type: NODE_TYPES.MDX_JSX_FLOW_ELEMENT,
-    name: null, // null name indicates a fragment
-    attributes: [],
-    children: children as RootContent[],
-  } as any;
+function parseJSXAttributes(attributesString: string): Record<string, any> {
+  const props: Record<string, any> = {};
+  
+  if (!attributesString.trim()) {
+    return props;
+  }
+  
+  // Simple regex to parse JSX attributes like: item={props.msg} name="value"
+  const attrPattern = /(\w+)=\{([^}]+)\}|(\w+)="([^"]*)"/g;
+  let match;
+  
+  while ((match = attrPattern.exec(attributesString)) !== null) {
+    if (match[1] && match[2]) {
+      // Expression attribute: item={props.msg}
+      props[match[1]] = match[2];
+    } else if (match[3] && match[4]) {
+      // String attribute: name="value" 
+      props[match[3]] = JSON.stringify(match[4]);
+    }
+  }
+  
+  return props;
 }
 
 function inlineJsxElements(
@@ -318,10 +334,9 @@ function inlineJsxElements(
             childrenContent,
             componentASTs
           )
-        ).flat();
+        );
 
-        parent.children.splice(index, 1, ...processedComponentNodes);
-        
+        parent.children.splice(index, 1, ...processedComponentNodes.flat());
         replaced = true;
       } else if (TagPluginRegistry.get(componentName)) {
         // For built-in tags (like ForEach), keep the tag but process its children
@@ -451,9 +466,9 @@ function inlineComponentsAndResolveProps(
           childrenContent,
           componentASTs
         )
-      ).flat();
+      );
 
-      return processedComponentNodes;
+      return processedComponentNodes.flat();
     } else if (TagPluginRegistry.get(componentName)) {
       // For built-in tags, keep the tag but process its children
       const newNode = { ...node } as Parent;
