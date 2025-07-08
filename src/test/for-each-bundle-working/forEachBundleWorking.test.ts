@@ -4,7 +4,8 @@ import { stringify, parse, ContentLoader } from "../../index";
 import fs from 'fs';
 
 const props = {
-  items: [1, 2, 3]
+  items: [1, 2, 3],
+  text: "Hello"
 };
 
 test('ForEach bundles components with static props correctly', async () => {
