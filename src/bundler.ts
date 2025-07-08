@@ -245,19 +245,20 @@ function processSimpleJSXInExpression(
           const headingPrefix = '#'.repeat(firstNode.depth || 2) + ' ';
           let headingContent = '';
           
-          // Combine all children (text nodes and expressions) with prop substitution
-          for (const child of firstNode.children) {
-            if (child.type === 'text') {
-              headingContent += (child as any).value;
-            } else if (child.type === 'mdxTextExpression') {
-              const expression = (child as any).value;
-              // Apply prop substitution to expressions
-              const { value: substitutedExpression } = substitutePropsInExpression(expression, props);
-              headingContent += '{' + substitutedExpression + '}';
-            }
-          }
-          
-          return headingPrefix + headingContent;
+                     // Combine all children (text nodes and expressions) with prop substitution
+           for (const child of firstNode.children) {
+             if (child.type === 'text') {
+               headingContent += (child as any).value;
+             } else if (child.type === 'mdxTextExpression') {
+               const expression = (child as any).value;
+               // Apply prop substitution to expressions
+               const { value: substitutedExpression } = substitutePropsInExpression(expression, props);
+               headingContent += '{' + substitutedExpression + '}';
+             }
+           }
+           
+           // Wrap in fragment tags to be valid JSX inside ForEach
+           return `<>\n      ${headingPrefix}${headingContent}\n    </>`;
         }
       }
       return match; // fallback to original if we can't inline
