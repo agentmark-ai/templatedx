@@ -31,20 +31,6 @@ jsep.plugins.register(jsepObject);
 
 const options: Options = {
   extensions: [mdxToMarkdown()],
-  join: [
-    // Remove extra blank lines around fragments
-    (left: any, right: any, parent: any) => {
-      // Tight spacing for fragments (JSX elements with name: null)
-      if ((left && left.type === 'mdxJsxFlowElement' && left.name === null) ||
-          (right && right.type === 'mdxJsxFlowElement' && right.name === null)) {
-        return 0;
-      }
-      // Tight spacing inside fragments
-      if (parent && parent.type === 'mdxJsxFlowElement' && parent.name === null) {
-        return 0;
-      }
-    }
-  ],
 };
 const toMdxMarkdown = (node: Root) => {
   return toMarkdown(node, options);
