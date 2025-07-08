@@ -8,7 +8,9 @@ import {
   isMdxJsxElement,
   isParentNode,
   parse,
+  stringify,
 } from './ast-utils';
+import { TagPluginRegistry } from './tag-plugin-registry';
 
 export async function bundle(
   mdxContent: string,
@@ -161,6 +163,130 @@ async function inlineComponents(
   } while (hasReplacements);
 }
 
+
+
+function processChildrenDirectly(
+  children: any[],
+  componentASTs: ComponentASTs,
+  parentProps: Record<string, any> = {}
+): boolean {
+  let replaced = false;
+  
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i];
+    
+    if (isMdxJsxElement(child)) {
+      const componentName = child.name;
+      if (componentName && componentASTs[componentName]) {
+        const componentNodes = cloneObject(componentASTs[componentName]);
+        const props = extractRawProps(child, parentProps);
+        const childrenContent = child.children || [];
+
+        const processedComponentNodes = componentNodes.map((childNode: any) =>
+          inlineComponentsAndResolveProps(
+            childNode,
+            props,
+            childrenContent,
+            componentASTs
+          )
+        );
+
+        children.splice(i, 1, ...processedComponentNodes.flat());
+        replaced = true;
+        i += processedComponentNodes.flat().length - 1;
+      } else if (componentName && TagPluginRegistry.get(componentName)) {
+        if (child.children && child.children.length > 0) {
+          const childrenProcessed = processChildrenDirectly(child.children, componentASTs, parentProps);
+          if (childrenProcessed) {
+            replaced = true;
+          }
+        }
+      }
+    } else if (child.type === NODE_TYPES.MDX_FLOW_EXPRESSION || child.type === NODE_TYPES.MDX_TEXT_EXPRESSION) {
+      const expressionProcessed = processSimpleJSXInExpression(child, componentASTs);
+      if (expressionProcessed) {
+        replaced = true;
+      }
+    } else if (isParentNode(child)) {
+      const childrenProcessed = processChildrenDirectly(child.children, componentASTs, parentProps);
+      if (childrenProcessed) {
+        replaced = true;
+      }
+    }
+  }
+  
+  return replaced;
+}
+
+function processSimpleJSXInExpression(
+  expressionNode: any,
+  componentASTs: ComponentASTs
+): boolean {
+  // For expressions containing JSX components, parse and process them properly
+  if (!expressionNode.value || typeof expressionNode.value !== 'string') {
+    return false;
+  }
+
+  // Check if expression contains any known component names
+  const hasComponents = Object.keys(componentASTs).some(name => 
+    expressionNode.value.includes(`<${name}`)
+  );
+  
+  if (!hasComponents) {
+    return false;
+  }
+
+  try {
+    const tempTree = parse(expressionNode.value);
+    let wasModified = false;
+
+    visit(tempTree, [NODE_TYPES.MDX_JSX_FLOW_ELEMENT, NODE_TYPES.MDX_JSX_TEXT_ELEMENT], (node: any, index, parent) => {
+      const componentName = node.name;
+      if (!componentName || !parent || index === null) {
+        return;
+      }
+      
+      if (componentASTs[componentName]) {
+        const componentNodes = cloneObject(componentASTs[componentName]);
+        const props = extractRawProps(node, {});
+        
+        const processedComponentNodes = componentNodes.map((childNode: any) =>
+          inlineComponentsAndResolveProps(childNode, props, [], componentASTs)
+        ).flat();
+        
+        const parentIsFragment = parent.type === NODE_TYPES.MDX_JSX_FLOW_ELEMENT && parent.name === null;
+        
+        if (parentIsFragment) {
+          parent.children.splice(index, 1, ...processedComponentNodes);
+        } else {
+          const fragment = createFragment(processedComponentNodes);
+          parent.children.splice(index, 1, fragment);
+        }
+        
+        wasModified = true;
+        return [SKIP, index];
+      }
+    });
+
+    if (wasModified) {
+      expressionNode.value = stringify(tempTree).trim();
+    }
+
+    return wasModified;
+  } catch (e) {
+    return false;
+  }
+}
+
+function createFragment(children: Node[]): Node {
+  return {
+    type: NODE_TYPES.MDX_JSX_FLOW_ELEMENT,
+    name: null, // null name indicates a fragment
+    attributes: [],
+    children: children as RootContent[],
+  } as any;
+}
+
 function inlineJsxElements(
   tree: Root | Parent,
   componentASTs: ComponentASTs,
@@ -173,6 +299,10 @@ function inlineJsxElements(
     [NODE_TYPES.MDX_JSX_FLOW_ELEMENT, NODE_TYPES.MDX_JSX_TEXT_ELEMENT],
     (node: any, index, parent) => {
       const componentName = node.name;
+      if (!componentName || index === null || !parent) {
+        return;
+      }
+      
       if (componentASTs[componentName]) {
         const componentNodes = cloneObject(componentASTs[componentName]);
         const props = extractRawProps(node, parentProps);
@@ -185,10 +315,18 @@ function inlineJsxElements(
             childrenContent,
             componentASTs
           )
-        );
+        ).flat();
 
-        parent.children.splice(index, 1, ...processedComponentNodes.flat());
+        parent.children.splice(index, 1, ...processedComponentNodes);
+        
         replaced = true;
+      } else if (TagPluginRegistry.get(componentName)) {
+        if (node.children && node.children.length > 0) {
+          const childrenProcessed = processChildrenDirectly(node.children, componentASTs, parentProps);
+          if (childrenProcessed) {
+            replaced = true;
+          }
+        }
       }
     }
   );
@@ -309,15 +447,27 @@ function inlineComponentsAndResolveProps(
           childrenContent,
           componentASTs
         )
-      );
+      ).flat();
 
-      return processedComponentNodes.flat();
+      return processedComponentNodes;
+    } else if (TagPluginRegistry.get(componentName)) {
+      // For built-in tags, keep the tag but process its children
+      const newNode = { ...node } as Parent;
+      newNode.children = newNode.children.flatMap((child: any) =>
+        inlineComponentsAndResolveProps(
+          child,
+          props,
+          childrenContent,
+          componentASTs
+        )
+      ) as RootContent[];
+      return newNode;
     }
   }
 
   if (isParentNode(node)) {
     const newNode = node as Parent;
-    newNode.children = newNode.children.flatMap((child) =>
+    newNode.children = newNode.children.flatMap((child: any) =>
       inlineComponentsAndResolveProps(
         child,
         props,
