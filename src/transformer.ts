@@ -368,22 +368,16 @@ export const transformTree = async (
   shared: Record<string, any> = {},
   tagPluginRegistry?: TagPluginRegistry,
   filterRegistry?: FilterRegistry,
+  componentASTs?: any
 ): Promise<Root> => {
   const scope = new Scope({ props }, shared);
   const transformer = new NodeTransformer(scope, tagPluginRegistry, filterRegistry);
-  const processedTree = await transformer.transformNode(tree);
-  return processedTree as Root;
-};
-
-export const transformTreeWithComponents = async (
-  tree: Root,
-  props: Record<string, any> = {},
-  shared: Record<string, any> = {},
-  componentASTs: any
-): Promise<Root> => {
-  const scope = new Scope({ props }, shared);
-  const transformer = new NodeTransformer(scope);
-  (transformer as any).componentASTs = componentASTs;
+  
+  // If componentASTs is provided, attach it to the transformer
+  if (componentASTs) {
+    (transformer as any).componentASTs = componentASTs;
+  }
+  
   const processedTree = await transformer.transformNode(tree);
   return processedTree as Root;
 };
