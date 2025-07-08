@@ -2,6 +2,7 @@ import { NODE_TYPES, MDX_JSX_ATTRIBUTE_TYPES } from './constants';
 import { getDirname, resolvePath, cloneObject } from './utils';
 import { visit } from 'unist-util-visit';
 import type { Root, RootContent, Paragraph, Parent, Node } from 'mdast';
+import type { MdxJsxFlowElement, MdxJsxTextElement } from 'mdast-util-mdx';
 import type { ComponentASTs, ContentLoader } from './types';
 import { SKIP } from 'unist-util-visit';
 import {
@@ -183,14 +184,14 @@ function inlineJsxElements(
   visit(
     tree,
     [NODE_TYPES.MDX_JSX_FLOW_ELEMENT, NODE_TYPES.MDX_JSX_TEXT_ELEMENT],
-    (node: any, index, parent) => {
+    (node: MdxJsxFlowElement | MdxJsxTextElement, index, parent) => {
       const componentName = node.name;
       if (componentASTs[componentName]) {
         const componentNodes = cloneObject(componentASTs[componentName]);
         const props = extractRawProps(node, parentProps);
         const childrenContent = node.children || [];
 
-        const processedComponentNodes = componentNodes.map((childNode: any) =>
+        const processedComponentNodes = componentNodes.map((childNode: RootContent) =>
           inlineComponentsAndResolveProps(
             childNode,
             props,
@@ -199,7 +200,7 @@ function inlineJsxElements(
           )
         );
 
-        parent.children.splice(index, 1, ...processedComponentNodes.flat());
+        parent!.children.splice(index!, 1, ...processedComponentNodes.flat());
         replaced = true;
       }
     }
@@ -209,7 +210,7 @@ function inlineJsxElements(
 }
 
 function extractRawProps(
-  node: any,
+  node: MdxJsxFlowElement | MdxJsxTextElement,
   parentProps: Record<string, any>
 ): Record<string, any> {
   const props: Record<string, any> = {};
@@ -218,7 +219,7 @@ function extractRawProps(
     if (attr.type === MDX_JSX_ATTRIBUTE_TYPES.MDX_JSX_ATTRIBUTE) {
       if (attr.value === null || typeof attr.value === 'string') {
         props[attr.name] = JSON.stringify(attr.value || '');
-      } else if (attr.value.type === MDX_JSX_ATTRIBUTE_TYPES.MDX_JSX_ATTRIBUTE_VALUE_EXPRESSION) {
+      } else if (attr.value && attr.value.type === MDX_JSX_ATTRIBUTE_TYPES.MDX_JSX_ATTRIBUTE_VALUE_EXPRESSION) {
         const { value: resolvedValue } = substitutePropsInExpression(
           attr.value.value,
           parentProps

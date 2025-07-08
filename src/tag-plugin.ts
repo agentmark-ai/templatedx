@@ -1,6 +1,7 @@
 import { Node } from 'mdast';
 import { Scope } from './scope';
 import { NODE_TYPES } from './constants';
+import type { ComponentASTs } from './types';
 
 export interface NodeHelpers {
   isMdxJsxElement(node: Node): boolean;
@@ -18,7 +19,7 @@ export interface PluginContext {
   createNodeTransformer: (scope: Scope) => any;
   scope: Scope;
   tagName: string;
-  componentASTs?: any;
+  componentASTs?: ComponentASTs;
 }
 
 export abstract class TagPlugin<Props = Record<string, any>> {

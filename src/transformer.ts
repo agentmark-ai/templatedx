@@ -24,6 +24,7 @@ import type {
   Parent, 
   RootContent,
 } from 'mdast';
+import type { ComponentASTs } from './types';
 import { mdxToMarkdown } from "mdast-util-mdx";
 import { toMarkdown, Options } from 'mdast-util-to-markdown';
 
@@ -51,6 +52,7 @@ export class NodeTransformer {
   private scope: Scope;
   private tagPluginRegistry: TagPluginRegistry;
   private filterRegistry: FilterRegistry;
+  private componentASTs?: ComponentASTs;
 
   constructor(scope: Scope, tagPluginRegistry?: TagPluginRegistry, filterRegistry?: FilterRegistry) {
     this.scope = scope;
@@ -64,6 +66,10 @@ export class NodeTransformer {
     if (!filterRegistry) {
       this.filterRegistry.copyFromStatic();
     }
+  }
+
+  setComponentASTs(componentASTs: ComponentASTs): void {
+    this.componentASTs = componentASTs;
   }
 
   async transformNode(node: Node): Promise<Node | Node[]> {
@@ -82,8 +88,8 @@ export class NodeTransformer {
       const processedChildren = await Promise.all(
         (node as Parent).children.map(async (child) => {
           const childTransformer = new NodeTransformer(this.scope, this.tagPluginRegistry, this.filterRegistry);
-          if ((this as any).componentASTs) {
-            (childTransformer as any).componentASTs = (this as any).componentASTs;
+          if (this.componentASTs) {
+            childTransformer.setComponentASTs(this.componentASTs);
           }
           const result = await childTransformer.transformNode(child);
           return Array.isArray(result) ? result : [result];
@@ -315,27 +321,27 @@ export class NodeTransformer {
         const pluginContext: PluginContext = {
           createNodeTransformer: (scope: Scope) => {
             const transformer = new NodeTransformer(scope, this.tagPluginRegistry, this.filterRegistry);
-            if ((this as any).componentASTs) {
-              (transformer as any).componentASTs = (this as any).componentASTs;
+            if (this.componentASTs) {
+              transformer.setComponentASTs(this.componentASTs);
             }
             return transformer;
           },
           scope: this.scope,
           tagName,
           nodeHelpers,
-          componentASTs: (this as any).componentASTs,
+          componentASTs: this.componentASTs,
         };
         const result = await plugin.transform(props, node.children, pluginContext);
         return result;
-      } else if ((this as any).componentASTs && (this as any).componentASTs[tagName]) {
+      } else if (this.componentASTs && this.componentASTs[tagName]) {
         // Handle component inlining at runtime
-        const componentNodes = cloneObject((this as any).componentASTs[tagName]);
+        const componentNodes = cloneObject(this.componentASTs[tagName]);
         const props = this.evaluateProps(node);
         const childrenContent = node.children || [];
 
         // Process each component node recursively
         const processedNodes = await Promise.all(
-          componentNodes.map(async (componentNode: any) => {
+          componentNodes.map(async (componentNode: RootContent) => {
             const processed = await this.inlineComponentAndResolveProps(
               componentNode,
               props,
@@ -352,8 +358,8 @@ export class NodeTransformer {
         const processedChildren = await Promise.all(
           node.children.map(async (child) => {
             const childTransformer = new NodeTransformer(this.scope, this.tagPluginRegistry, this.filterRegistry);
-            if ((this as any).componentASTs) {
-              (childTransformer as any).componentASTs = (this as any).componentASTs;
+            if (this.componentASTs) {
+              childTransformer.setComponentASTs(this.componentASTs);
             }
             const result = await childTransformer.transformNode(child);
             return Array.isArray(result) ? result : [result];
@@ -371,7 +377,7 @@ export class NodeTransformer {
   }
 
   private async inlineComponentAndResolveProps(
-    node: Node,
+    node: RootContent,
     props: Record<string, any>,
     childrenContent: RootContent[]
   ): Promise<Node | Node[]> {
@@ -387,7 +393,9 @@ export class NodeTransformer {
         // Create a new scope with component props and resolve the expression
         const componentScope = this.scope.createChild({ props });
         const componentTransformer = new NodeTransformer(componentScope, this.tagPluginRegistry, this.filterRegistry);
-        (componentTransformer as any).componentASTs = (this as any).componentASTs;
+        if (this.componentASTs) {
+          componentTransformer.setComponentASTs(this.componentASTs);
+        }
         
         try {
           const resolvedValue = componentTransformer.resolveExpression(expression);
@@ -406,7 +414,9 @@ export class NodeTransformer {
       // Process nested components with a new transformer that has component props
       const componentScope = this.scope.createChild({ props });
       const componentTransformer = new NodeTransformer(componentScope, this.tagPluginRegistry, this.filterRegistry);
-      (componentTransformer as any).componentASTs = (this as any).componentASTs;
+      if (this.componentASTs) {
+        componentTransformer.setComponentASTs(this.componentASTs);
+      }
       return await componentTransformer.processMdxJsxElement(node);
     }
 
@@ -462,14 +472,14 @@ export const transformTree = async (
   shared: Record<string, any> = {},
   tagPluginRegistry?: TagPluginRegistry,
   filterRegistry?: FilterRegistry,
-  componentASTs?: any
+  componentASTs?: ComponentASTs
 ): Promise<Root> => {
   const scope = new Scope({ props }, shared);
   const transformer = new NodeTransformer(scope, tagPluginRegistry, filterRegistry);
   
   // If componentASTs is provided, attach it to the transformer
   if (componentASTs) {
-    (transformer as any).componentASTs = componentASTs;
+    transformer.setComponentASTs(componentASTs);
   }
   
   const processedTree = await transformer.transformNode(tree);

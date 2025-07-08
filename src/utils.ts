@@ -24,20 +24,20 @@ export function getDirname(filePath: string): string {
   return '/' + parts.join('/');
 }
 
-export function cloneObject(obj: any): any {
+export function cloneObject<T>(obj: T): T {
   if (obj === null || typeof obj !== 'object') {
     return obj;
   }
   
   if (obj instanceof Date) {
-    return new Date(obj.getTime());
+    return new Date(obj.getTime()) as T;
   }
   
   if (Array.isArray(obj)) {
-    return obj.map(item => cloneObject(item));
+    return obj.map(item => cloneObject(item)) as T;
   }
   
-  const cloned: any = {};
+  const cloned = {} as T;
   for (const key in obj) {
     if (obj.hasOwnProperty(key)) {
       cloned[key] = cloneObject(obj[key]);
