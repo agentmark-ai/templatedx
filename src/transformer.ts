@@ -24,6 +24,8 @@ import type {
   Parent, 
   RootContent,
 } from 'mdast';
+// Forward declaration to avoid circular dependency
+import type { TemplateDX } from './templatedx-engine';
 import { mdxToMarkdown } from "mdast-util-mdx";
 import { toMarkdown, Options } from 'mdast-util-to-markdown';
 
@@ -49,9 +51,11 @@ const nodeHelpers = {
 
 export class NodeTransformer {
   private scope: Scope;
+  private templatedx?: TemplateDX;
 
-  constructor(scope: Scope) {
+  constructor(scope: Scope, templatedx?: TemplateDX) {
     this.scope = scope;
+    this.templatedx = templatedx;
   }
 
   async transformNode(node: Node): Promise<Node | Node[]> {
@@ -83,7 +87,7 @@ export class NodeTransformer {
 
       const processedChildren = await Promise.all(
         node.children.map(async (child) => {
-          const childTransformer = new NodeTransformer(this.scope);
+          const childTransformer = new NodeTransformer(this.scope, this.templatedx);
           const result = await childTransformer.transformNode(child);
           return Array.isArray(result) ? result : [result];
         })
@@ -192,7 +196,9 @@ export class NodeTransformer {
     }
 
     const functionName = (callee as jsep.Identifier).name;
-    const filterFunction = FilterRegistry.get(functionName);
+    const filterFunction = this.templatedx 
+      ? this.templatedx.getFilterRegistry().get(functionName)
+      : FilterRegistry.get(functionName);
     if (!filterFunction) {
       throw new Error(`Filter "${functionName}" is not registered.`);
     }
@@ -290,11 +296,13 @@ export class NodeTransformer {
   ): Promise<Node | Node[]> {
     try {
       const tagName = node.name!;
-      const plugin = TagPluginRegistry.get(tagName);
+      const plugin = this.templatedx 
+        ? this.templatedx.getTagRegistry().get(tagName)
+        : TagPluginRegistry.get(tagName);
       if (plugin) {
         const props = this.evaluateProps(node);
         const pluginContext: PluginContext = {
-          createNodeTransformer: (scope: Scope) => new NodeTransformer(scope),
+          createNodeTransformer: (scope: Scope) => new NodeTransformer(scope, this.templatedx),
           scope: this.scope,
           tagName,
           nodeHelpers,
@@ -306,7 +314,7 @@ export class NodeTransformer {
 
         const processedChildren = await Promise.all(
           node.children.map(async (child) => {
-            const childTransformer = new NodeTransformer(this.scope);
+            const childTransformer = new NodeTransformer(this.scope, this.templatedx);
             const result = await childTransformer.transformNode(child);
             return Array.isArray(result) ? result : [result];
           })
@@ -353,9 +361,10 @@ export const transformTree = async (
   tree: Root,
   props: Record<string, any> = {},
   shared: Record<string, any> = {},
+  templatedx?: TemplateDX,
 ): Promise<Root> => {
   const scope = new Scope({ props }, shared);
-  const transformer = new NodeTransformer(scope);
+  const transformer = new NodeTransformer(scope, templatedx);
   const processedTree = await transformer.transformNode(tree);
   return processedTree as Root;
 };
