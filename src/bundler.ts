@@ -35,6 +35,11 @@ function validateAllJsxElements(
       return;
     }
 
+    // Skip validation for content inside Raw tags - they should be treated as literal text
+    if (componentName === 'Raw') {
+      return SKIP; // Skip visiting children of Raw tags
+    }
+
     // Check if it's an imported component
     if (componentASTs[componentName]) {
       return;

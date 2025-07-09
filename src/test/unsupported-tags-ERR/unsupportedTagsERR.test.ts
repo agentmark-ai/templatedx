@@ -31,3 +31,17 @@ test('should throw specific error for made-up tag', async () => {
     "Unsupported tag '<RandomMadeUpTag>'. Only native MDX elements, and registered tags are supported."
   );
 });
+
+test('should ignore unsupported tags inside Raw tags', async () => {
+  const input = `
+<Raw>
+<CustomTag>This should not error</CustomTag>
+<AnotherUnsupportedTag>Content</AnotherUnsupportedTag>
+</Raw>
+`;
+  
+  // Should not throw any errors
+  await expect(
+    bundle(input, __dirname, contentLoader)
+  ).resolves.toBeDefined();
+});
