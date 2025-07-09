@@ -53,3 +53,6 @@ export {
   TagPlugin,
   FilterRegistry
 };
+
+// Export the new stateful engine
+export { TemplateDX } from './templatedx-engine';
