@@ -1,5 +1,11 @@
 # @agentmark/templatedx
 
+## 0.8.0
+
+### Minor Changes
+
+- 17f89a6: Feat: error on unsupported tags when parsing
+
 ## 0.7.0
 
 ### Minor Changes
