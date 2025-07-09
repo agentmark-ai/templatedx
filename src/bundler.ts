@@ -11,8 +11,50 @@ import {
   stringify,
 } from './ast-utils';
 import { TagPluginRegistry } from './tag-plugin-registry';
+import { isSupportedHTMLTag } from './supported-tags';
 // Forward declaration to avoid circular dependency
 import type { TemplateDX } from './templatedx-engine';
+
+/**
+ * Validates that a JSX element is supported
+ * @param componentName - The tag name to validate
+ * @param componentASTs - Available imported components
+ * @param templatedx - Optional TemplateDX instance for stateful tag registry
+ * @throws Error if the tag is not supported
+ */
+function validateSupportedTag(
+  componentName: string,
+  componentASTs: ComponentASTs,
+  templatedx?: TemplateDX
+): void {
+  // Allow fragments (no name)
+  if (!componentName) {
+    return;
+  }
+
+  // Check if it's an imported component
+  if (componentASTs[componentName]) {
+    return;
+  }
+
+  // Check if it's a built-in tag plugin
+  const tagRegistry = templatedx ? templatedx.getTagRegistry() : TagPluginRegistry;
+  if (tagRegistry.get(componentName)) {
+    return;
+  }
+
+  // Check if it's a supported HTML element
+  if (isSupportedHTMLTag(componentName)) {
+    return;
+  }
+
+  // If none of the above, it's unsupported
+  throw new Error(
+    `Unsupported tag '<${componentName}>'. ` +
+    `Only native HTML elements, built-in TemplateDX tags (If, Else, ElseIf, ForEach, Raw), ` +
+    `and imported components are supported.`
+  );
+}
 
 export async function bundle(
   mdxContent: string,
@@ -185,6 +227,12 @@ function processChildrenDirectly(
     
     if (isMdxJsxElement(child)) {
       const componentName = child.name;
+      
+      // Validate the tag is supported (null represents fragments, which are always allowed)
+      if (componentName) {
+        validateSupportedTag(componentName, componentASTs, templatedx);
+      }
+      
       if (componentName && componentASTs[componentName]) {
         const componentNodes = cloneObject(componentASTs[componentName]);
         const props = extractRawProps(child, parentProps);
@@ -256,6 +304,9 @@ function processSimpleJSXInExpression(
         return;
       }
       
+      // Validate the tag is supported
+      validateSupportedTag(componentName, componentASTs, templatedx);
+      
       if (componentASTs[componentName]) {
         const componentNodes = cloneObject(componentASTs[componentName]);
         const props = extractRawProps(node, {});
@@ -314,6 +365,9 @@ function inlineJsxElements(
       if (!componentName || index === null || !parent) {
         return;
       }
+      
+      // Validate the tag is supported
+      validateSupportedTag(componentName, componentASTs, templatedx);
       
       if (componentASTs[componentName]) {
         const componentNodes = cloneObject(componentASTs[componentName]);
@@ -454,6 +508,10 @@ function inlineComponentsAndResolveProps(
 
   if (isMdxJsxElement(node)) {
     const componentName = node.name!;
+    
+    // Validate the tag is supported
+    validateSupportedTag(componentName, componentASTs, templatedx);
+    
     if (componentASTs[componentName]) {
       const componentNodes = cloneObject(componentASTs[componentName]);
       const newProps = extractRawProps(node, props);
