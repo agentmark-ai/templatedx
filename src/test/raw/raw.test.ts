@@ -3,7 +3,7 @@ import { expect, test } from 'vitest'
 import { stringify, transform } from "../../index";
 import { parse } from "../../ast-utils";
 
-test('maps over arrays', async () => {
+test('raw tags', async () => {
   const input = getInput(__dirname);
   const tree = parse(input);
   const processed = await transform(tree);
