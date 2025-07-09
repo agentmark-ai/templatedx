@@ -1,6 +1,6 @@
 import { getInput, getOutput } from "../helpers";
 import { expect, test } from 'vitest'
-import { stringify, transform, TagPlugin, PluginContext, TagPluginRegistry } from "../../index";
+import { stringify, TemplateDX, TagPlugin, PluginContext } from "../../index";
 import { parse } from "../../ast-utils";
 import { Node } from "mdast";
 
@@ -59,14 +59,17 @@ class PluginBPlugin extends TagPlugin {
     return [pluginBNode, ...processedChildren.flat()];
   }
 }
-TagPluginRegistry.register(new PluginAPlugin(), ['PluginA'])
-TagPluginRegistry.register(new PluginBPlugin(), ['PluginB'])
-
 
 test('parent-child should share context', async () => {
   const input = getInput(__dirname);
   const tree = parse(input);
-  const processed = await transform(tree);
+  
+  // Create TemplateDX instance and register the plugins
+  const templatedx = new TemplateDX();
+  templatedx.registerTagPlugin(new PluginAPlugin(), ['PluginA']);
+  templatedx.registerTagPlugin(new PluginBPlugin(), ['PluginB']);
+  
+  const processed = await templatedx.transform(tree);
   const compiled = stringify(processed);
   const output = getOutput(__dirname);
   expect(compiled).toEqual(output);

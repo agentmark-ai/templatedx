@@ -1,6 +1,6 @@
 import { getInput } from "../helpers";
 import { expect, test } from 'vitest'
-import { getFrontMatter, TagPlugin, PluginContext, transform, TagPluginRegistry } from "../../index";
+import { getFrontMatter, TagPlugin, PluginContext, TemplateDX } from "../../index";
 import { parse } from "../../ast-utils";
 import { Node } from 'mdast';
 
@@ -54,15 +54,18 @@ class ExtractTextPlugin extends TagPlugin {
   }
 }
 
-TagPluginRegistry.register(new ExtractTextPlugin(), ['Input', 'Other']);
-
 test('testing globals, and that plugins can access/manipulate globals', async () => {
   const input = getInput(__dirname);
   const ast = parse(input);
   const frontMatter = getFrontMatter(ast);
   const shared: SharedContext = { sharedVal: 'hello shared' };
   const props = { text: 'hello', arr: ['a', 'b', 'c'] };
-  await transform(ast, props, shared);
+  
+  // Create TemplateDX instance and register the plugin
+  const templatedx = new TemplateDX();
+  templatedx.registerTagPlugin(new ExtractTextPlugin(), ['Input', 'Other']);
+  
+  await templatedx.transform(ast, props, shared);
   // We're using a plugin to extract fields here, instead of rendering them
   expect(shared.extractedText).toEqual([
     { name: 'Input', content: 'This is the input text1 hello' },

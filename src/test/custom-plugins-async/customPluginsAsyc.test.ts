@@ -1,6 +1,6 @@
 import { getInput, getOutput } from "../helpers";
 import { expect, test } from 'vitest'
-import { stringify, TagPluginRegistry, transform } from "../../index";
+import { stringify, TemplateDX } from "../../index";
 import { parse } from "../../ast-utils";
 import { Node } from "mdast";
 import { TagPlugin } from "../../index";
@@ -33,12 +33,16 @@ class FetchDataPlugin extends TagPlugin {
     return processedChildren.flat();
   }
 }
-TagPluginRegistry.register(new FetchDataPlugin(), ['FetchData']);
 
 test('async plugins should work', async () => {
   const input = getInput(__dirname);
   const tree = parse(input);
-  const processed = await transform(tree);
+  
+  // Create TemplateDX instance and register the plugin
+  const templatedx = new TemplateDX();
+  templatedx.registerTagPlugin(new FetchDataPlugin(), ['FetchData']);
+  
+  const processed = await templatedx.transform(tree);
   const compiled = stringify(processed);
   const output = getOutput(__dirname);
   expect(compiled).toEqual(output);
