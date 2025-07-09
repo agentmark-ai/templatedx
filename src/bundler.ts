@@ -11,8 +11,58 @@ import {
   stringify,
 } from './ast-utils';
 import { TagPluginRegistry } from './tag-plugin-registry';
+import { isSupportedHTMLTag } from './supported-tags';
 // Forward declaration to avoid circular dependency
 import type { TemplateDX } from './templatedx-engine';
+
+/**
+ * Validates all JSX elements in the tree to ensure they are supported
+ * @param tree - The AST tree to validate
+ * @param componentASTs - Available imported components
+ * @param templatedx - Optional TemplateDX instance for stateful tag registry
+ * @throws Error if any unsupported tag is found
+ */
+function validateAllJsxElements(
+  tree: Root,
+  componentASTs: ComponentASTs,
+  templatedx?: TemplateDX
+): void {
+  visit(tree, [NODE_TYPES.MDX_JSX_FLOW_ELEMENT, NODE_TYPES.MDX_JSX_TEXT_ELEMENT], (node: any) => {
+    const componentName = node.name;
+    
+    // Allow fragments (no name)
+    if (!componentName) {
+      return;
+    }
+
+    // Skip validation for content inside Raw tags - they should be treated as literal text
+    if (componentName === 'Raw') {
+      return SKIP; // Skip visiting children of Raw tags
+    }
+
+    // Check if it's an imported component
+    if (componentASTs[componentName]) {
+      return;
+    }
+
+    // Check if it's a built-in tag plugin
+    const tagRegistry = templatedx ? templatedx.getTagRegistry() : TagPluginRegistry;
+    if (tagRegistry.get(componentName)) {
+      return;
+    }
+
+    // Check if it's a supported HTML element
+    if (isSupportedHTMLTag(componentName)) {
+      return;
+    }
+
+    // If none of the above, it's unsupported
+    throw new Error(
+      `Unsupported tag '<${componentName}>'. ` +
+      `Only native MDX elements, and registered tags are supported.`
+    );
+  });
+}
 
 export async function bundle(
   mdxContent: string,
@@ -31,6 +81,9 @@ export async function bundle(
     contentLoader,
     templatedx
   );
+
+  // Validate all JSX elements before processing
+  validateAllJsxElements(mainTree, componentASTs, templatedx);
 
   inlineComponents(mainTree, componentASTs, templatedx);
 
@@ -185,6 +238,7 @@ function processChildrenDirectly(
     
     if (isMdxJsxElement(child)) {
       const componentName = child.name;
+      
       if (componentName && componentASTs[componentName]) {
         const componentNodes = cloneObject(componentASTs[componentName]);
         const props = extractRawProps(child, parentProps);
@@ -454,6 +508,7 @@ function inlineComponentsAndResolveProps(
 
   if (isMdxJsxElement(node)) {
     const componentName = node.name!;
+    
     if (componentASTs[componentName]) {
       const componentNodes = cloneObject(componentASTs[componentName]);
       const newProps = extractRawProps(node, props);
