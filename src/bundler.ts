@@ -32,7 +32,7 @@ export async function bundle(
     templatedx
   );
 
-  await inlineComponents(mainTree, componentASTs, templatedx);
+  inlineComponents(mainTree, componentASTs, templatedx);
 
   return mainTree;
 }
@@ -158,26 +158,26 @@ function extractImports(tree: Root, absolutePath: string): Record<string, string
   return imports;
 }
 
-async function inlineComponents(
+function inlineComponents(
   tree: Root,
   componentASTs: ComponentASTs,
   templatedx?: TemplateDX
-): Promise<void> {
+): void {
   let hasReplacements: boolean;
 
   do {
-    hasReplacements = await inlineJsxElements(tree, componentASTs, {}, templatedx);
+    hasReplacements = inlineJsxElements(tree, componentASTs, {}, templatedx);
   } while (hasReplacements);
 }
 
 
 
-async function processChildrenDirectly(
+function processChildrenDirectly(
   children: any[],
   componentASTs: ComponentASTs,
   parentProps: Record<string, any> = {},
   templatedx?: TemplateDX
-): Promise<boolean> {
+): boolean {
   let replaced = false;
   
   for (let i = 0; i < children.length; i++) {
@@ -190,15 +190,13 @@ async function processChildrenDirectly(
         const props = extractRawProps(child, parentProps);
         const childrenContent = child.children || [];
 
-        const processedComponentNodes = await Promise.all(
-          componentNodes.map((childNode: any) =>
-            inlineComponentsAndResolveProps(
-              childNode,
-              props,
-              childrenContent,
-              componentASTs,
-              templatedx
-            )
+        const processedComponentNodes = componentNodes.map((childNode: any) =>
+          inlineComponentsAndResolveProps(
+            childNode,
+            props,
+            childrenContent,
+            componentASTs,
+            templatedx
           )
         );
 
@@ -207,19 +205,19 @@ async function processChildrenDirectly(
         i += processedComponentNodes.flat().length - 1;
       } else if (componentName && (templatedx ? templatedx.getTagRegistry().get(componentName) : TagPluginRegistry.get(componentName))) {
         if (child.children && child.children.length > 0) {
-          const childrenProcessed = await processChildrenDirectly(child.children, componentASTs, parentProps, templatedx);
+          const childrenProcessed = processChildrenDirectly(child.children, componentASTs, parentProps, templatedx);
           if (childrenProcessed) {
             replaced = true;
           }
         }
       }
     } else if (child.type === NODE_TYPES.MDX_FLOW_EXPRESSION || child.type === NODE_TYPES.MDX_TEXT_EXPRESSION) {
-      const expressionProcessed = await processSimpleJSXInExpression(child, componentASTs, templatedx);
+      const expressionProcessed = processSimpleJSXInExpression(child, componentASTs, templatedx);
       if (expressionProcessed) {
         replaced = true;
       }
     } else if (isParentNode(child)) {
-      const childrenProcessed = await processChildrenDirectly(child.children, componentASTs, parentProps, templatedx);
+      const childrenProcessed = processChildrenDirectly(child.children, componentASTs, parentProps, templatedx);
       if (childrenProcessed) {
         replaced = true;
       }
@@ -229,11 +227,11 @@ async function processChildrenDirectly(
   return replaced;
 }
 
-async function processSimpleJSXInExpression(
+function processSimpleJSXInExpression(
   expressionNode: any,
   componentASTs: ComponentASTs,
   templatedx?: TemplateDX
-): Promise<boolean> {
+): boolean {
   // For expressions containing JSX components, parse and process them properly
   if (!expressionNode.value || typeof expressionNode.value !== 'string') {
     return false;
@@ -262,10 +260,8 @@ async function processSimpleJSXInExpression(
         const componentNodes = cloneObject(componentASTs[componentName]);
         const props = extractRawProps(node, {});
         
-        const processedComponentNodes = await Promise.all(
-          componentNodes.map((childNode: any) =>
-            inlineComponentsAndResolveProps(childNode, props, [], componentASTs, templatedx)
-          )
+        const processedComponentNodes = componentNodes.map((childNode: any) =>
+          inlineComponentsAndResolveProps(childNode, props, [], componentASTs, templatedx)
         );
         const flatProcessedNodes = processedComponentNodes.flat();
         
@@ -302,12 +298,12 @@ function createFragment(children: Node[]): Node {
   } as any;
 }
 
-async function inlineJsxElements(
+function inlineJsxElements(
   tree: Root | Parent,
   componentASTs: ComponentASTs,
   parentProps: Record<string, any> = {},
   templatedx?: TemplateDX
-): Promise<boolean> {
+): boolean {
   let replaced = false;
 
   visit(
@@ -329,7 +325,8 @@ async function inlineJsxElements(
             childNode,
             props,
             childrenContent,
-            componentASTs
+            componentASTs,
+            templatedx
           )
         ).flat();
 
@@ -338,7 +335,7 @@ async function inlineJsxElements(
         replaced = true;
       } else if (templatedx ? templatedx.getTagRegistry().get(componentName) : TagPluginRegistry.get(componentName)) {
         if (node.children && node.children.length > 0) {
-          const childrenProcessed = await processChildrenDirectly(node.children, componentASTs, parentProps, templatedx);
+          const childrenProcessed = processChildrenDirectly(node.children, componentASTs, parentProps, templatedx);
           if (childrenProcessed) {
             replaced = true;
           }
@@ -415,20 +412,25 @@ function substitutePropsInExpression(
   return { value: currentExpression, isLiteral };
 }
 
-async function inlineComponentsAndResolveProps(
+function inlineComponentsAndResolveProps(
   node: Node,
   props: Record<string, any>,
   childrenContent: RootContent[],
   componentASTs: ComponentASTs,
   templatedx?: TemplateDX
-): Promise<Node | Node[]> {
+): Node | Node[] {
   if (
     node.type === NODE_TYPES.MDX_TEXT_EXPRESSION ||
     node.type === NODE_TYPES.MDX_FLOW_EXPRESSION
   ) {
     if ((node as any).value === 'props.children') {
       const childrenTree: Root = { type: 'root', children: [...childrenContent] };
-      await inlineComponents(childrenTree, componentASTs, templatedx);
+      // TODO: This should be async but bundler doesn't support async well
+      // For now, inline components synchronously 
+      let hasReplacements: boolean;
+      do {
+        hasReplacements = inlineJsxElements(childrenTree, componentASTs, {}, templatedx);
+      } while (hasReplacements);
       return combinedNodesIntoParagraph(childrenTree.children);
     } else if ((node as any).value.includes('props.')) {
       const { value: resolvedValue, isLiteral } = substitutePropsInExpression(
@@ -457,15 +459,13 @@ async function inlineComponentsAndResolveProps(
       const newProps = extractRawProps(node, props);
       const childrenContent = node.children || [];
 
-      const processedComponentNodes = await Promise.all(
-        componentNodes.map((childNode: any) =>
-          inlineComponentsAndResolveProps(
-            childNode,
-            newProps,
-            childrenContent,
-            componentASTs,
-            templatedx
-          )
+      const processedComponentNodes = componentNodes.map((childNode: any) =>
+        inlineComponentsAndResolveProps(
+          childNode,
+          newProps,
+          childrenContent,
+          componentASTs,
+          templatedx
         )
       );
       const flatProcessedNodes = processedComponentNodes.flat();
@@ -474,15 +474,13 @@ async function inlineComponentsAndResolveProps(
     } else if (TagPluginRegistry.get(componentName)) {
       // For built-in tags, keep the tag but process its children
       const newNode = { ...node } as Parent;
-      const processedChildren = await Promise.all(
-        newNode.children.map((child: any) =>
-          inlineComponentsAndResolveProps(
-            child,
-            props,
-            childrenContent,
-            componentASTs,
-            templatedx
-          )
+      const processedChildren = newNode.children.map((child: any) =>
+        inlineComponentsAndResolveProps(
+          child,
+          props,
+          childrenContent,
+          componentASTs,
+          templatedx
         )
       );
       newNode.children = processedChildren.flat() as RootContent[];
@@ -492,15 +490,13 @@ async function inlineComponentsAndResolveProps(
 
   if (isParentNode(node)) {
     const newNode = node as Parent;
-    const processedChildren = await Promise.all(
-      newNode.children.map((child: any) =>
-        inlineComponentsAndResolveProps(
-          child,
-          props,
-          childrenContent,
-          componentASTs,
-          templatedx
-        )
+    const processedChildren = newNode.children.map((child: any) =>
+      inlineComponentsAndResolveProps(
+        child,
+        props,
+        childrenContent,
+        componentASTs,
+        templatedx
       )
     );
     newNode.children = processedChildren.flat() as RootContent[];

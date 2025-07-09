@@ -76,12 +76,18 @@ describe('Backwards Compatibility', () => {
   });
 
   test('should work with ForEach tag via static API', async () => {
-    const input = `<ForEach arr={props.items}>{(item) => item + " "}</ForEach>`;
+    const input = `<ForEach arr={props.items}>
+  {(item) => (
+    <>
+      {item}
+    </>
+  )}
+</ForEach>`;
     const tree = parse(input);
     const result = await transform(tree, { items: ['a', 'b', 'c'] });
     const output = stringify(result);
     
-    expect(output.trim()).toBe('a b c');
+    expect(output.trim()).toBe('abc');
   });
 
   test('static registries should have all built-in plugins', () => {
