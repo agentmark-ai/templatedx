@@ -1,5 +1,15 @@
 # @agentmark/templatedx
 
+## 0.7.0
+
+### Minor Changes
+
+- a336a15: Feat: Stateful TemplateDX instances
+
+### Patch Changes
+
+- 18ac9fc: Fix ForEach bundling issue
+
 ## 0.6.3
 
 ### Patch Changes
