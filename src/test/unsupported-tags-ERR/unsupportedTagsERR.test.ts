@@ -18,7 +18,7 @@ test('should throw specific error for CustomTag', async () => {
   await expect(
     bundle(input, __dirname, contentLoader)
   ).rejects.toThrowError(
-    "Unsupported tag '<CustomTag>'. Only native HTML elements, built-in TemplateDX tags (If, Else, ElseIf, ForEach, Raw), and imported components are supported."
+    "Unsupported tag '<CustomTag>'. Only native MDX elements, and registered tags are supported."
   );
 });
 
@@ -28,6 +28,6 @@ test('should throw specific error for made-up tag', async () => {
   await expect(
     bundle(input, __dirname, contentLoader)
   ).rejects.toThrowError(
-    "Unsupported tag '<RandomMadeUpTag>'. Only native HTML elements, built-in TemplateDX tags (If, Else, ElseIf, ForEach, Raw), and imported components are supported."
+    "Unsupported tag '<RandomMadeUpTag>'. Only native MDX elements, and registered tags are supported."
   );
 });

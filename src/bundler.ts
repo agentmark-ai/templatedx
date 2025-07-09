@@ -16,44 +16,47 @@ import { isSupportedHTMLTag } from './supported-tags';
 import type { TemplateDX } from './templatedx-engine';
 
 /**
- * Validates that a JSX element is supported
- * @param componentName - The tag name to validate
+ * Validates all JSX elements in the tree to ensure they are supported
+ * @param tree - The AST tree to validate
  * @param componentASTs - Available imported components
  * @param templatedx - Optional TemplateDX instance for stateful tag registry
- * @throws Error if the tag is not supported
+ * @throws Error if any unsupported tag is found
  */
-function validateSupportedTag(
-  componentName: string,
+function validateAllJsxElements(
+  tree: Root,
   componentASTs: ComponentASTs,
   templatedx?: TemplateDX
 ): void {
-  // Allow fragments (no name)
-  if (!componentName) {
-    return;
-  }
+  visit(tree, [NODE_TYPES.MDX_JSX_FLOW_ELEMENT, NODE_TYPES.MDX_JSX_TEXT_ELEMENT], (node: any) => {
+    const componentName = node.name;
+    
+    // Allow fragments (no name)
+    if (!componentName) {
+      return;
+    }
 
-  // Check if it's an imported component
-  if (componentASTs[componentName]) {
-    return;
-  }
+    // Check if it's an imported component
+    if (componentASTs[componentName]) {
+      return;
+    }
 
-  // Check if it's a built-in tag plugin
-  const tagRegistry = templatedx ? templatedx.getTagRegistry() : TagPluginRegistry;
-  if (tagRegistry.get(componentName)) {
-    return;
-  }
+    // Check if it's a built-in tag plugin
+    const tagRegistry = templatedx ? templatedx.getTagRegistry() : TagPluginRegistry;
+    if (tagRegistry.get(componentName)) {
+      return;
+    }
 
-  // Check if it's a supported HTML element
-  if (isSupportedHTMLTag(componentName)) {
-    return;
-  }
+    // Check if it's a supported HTML element
+    if (isSupportedHTMLTag(componentName)) {
+      return;
+    }
 
-  // If none of the above, it's unsupported
-  throw new Error(
-    `Unsupported tag '<${componentName}>'. ` +
-    `Only native HTML elements, built-in TemplateDX tags (If, Else, ElseIf, ForEach, Raw), ` +
-    `and imported components are supported.`
-  );
+    // If none of the above, it's unsupported
+    throw new Error(
+      `Unsupported tag '<${componentName}>'. ` +
+      `Only native MDX elements, and registered tags are supported.`
+    );
+  });
 }
 
 export async function bundle(
@@ -73,6 +76,9 @@ export async function bundle(
     contentLoader,
     templatedx
   );
+
+  // Validate all JSX elements before processing
+  validateAllJsxElements(mainTree, componentASTs, templatedx);
 
   inlineComponents(mainTree, componentASTs, templatedx);
 
@@ -228,11 +234,6 @@ function processChildrenDirectly(
     if (isMdxJsxElement(child)) {
       const componentName = child.name;
       
-      // Validate the tag is supported (null represents fragments, which are always allowed)
-      if (componentName) {
-        validateSupportedTag(componentName, componentASTs, templatedx);
-      }
-      
       if (componentName && componentASTs[componentName]) {
         const componentNodes = cloneObject(componentASTs[componentName]);
         const props = extractRawProps(child, parentProps);
@@ -304,9 +305,6 @@ function processSimpleJSXInExpression(
         return;
       }
       
-      // Validate the tag is supported
-      validateSupportedTag(componentName, componentASTs, templatedx);
-      
       if (componentASTs[componentName]) {
         const componentNodes = cloneObject(componentASTs[componentName]);
         const props = extractRawProps(node, {});
@@ -365,9 +363,6 @@ function inlineJsxElements(
       if (!componentName || index === null || !parent) {
         return;
       }
-      
-      // Validate the tag is supported
-      validateSupportedTag(componentName, componentASTs, templatedx);
       
       if (componentASTs[componentName]) {
         const componentNodes = cloneObject(componentASTs[componentName]);
@@ -508,9 +503,6 @@ function inlineComponentsAndResolveProps(
 
   if (isMdxJsxElement(node)) {
     const componentName = node.name!;
-    
-    // Validate the tag is supported
-    validateSupportedTag(componentName, componentASTs, templatedx);
     
     if (componentASTs[componentName]) {
       const componentNodes = cloneObject(componentASTs[componentName]);
