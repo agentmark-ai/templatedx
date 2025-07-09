@@ -29,12 +29,12 @@ import { toMarkdown, Options } from 'mdast-util-to-markdown';
 
 jsep.plugins.register(jsepObject);
 
-const options: Options = {
-  extensions: [mdxToMarkdown()],
+const toMdxMarkdown = (tree: any, options?: Options) => {
+  return toMarkdown(tree, {
+    ...options,
+    extensions: [mdxToMarkdown()]
+  });
 };
-const toMdxMarkdown = (node: Root) => {
-  return toMarkdown(node, options);
-}
 
 const nodeHelpers = {
   isMdxJsxElement,
@@ -49,9 +49,15 @@ const nodeHelpers = {
 
 export class NodeTransformer {
   private scope: Scope;
+  private tagPluginRegistry: TagPluginRegistry;
+  private filterRegistry: FilterRegistry;
+  private useStaticRegistries: boolean;
 
-  constructor(scope: Scope) {
+  constructor(scope: Scope, tagPluginRegistry?: TagPluginRegistry, filterRegistry?: FilterRegistry) {
     this.scope = scope;
+    this.useStaticRegistries = !tagPluginRegistry && !filterRegistry;
+    this.tagPluginRegistry = tagPluginRegistry || new TagPluginRegistry();
+    this.filterRegistry = filterRegistry || new FilterRegistry();
   }
 
   async transformNode(node: Node): Promise<Node | Node[]> {
@@ -69,7 +75,7 @@ export class NodeTransformer {
     if (this.isFragmentNode(node)) {
       const processedChildren = await Promise.all(
         (node as Parent).children.map(async (child) => {
-          const childTransformer = new NodeTransformer(this.scope);
+          const childTransformer = new NodeTransformer(this.scope, this.useStaticRegistries ? undefined : this.tagPluginRegistry, this.useStaticRegistries ? undefined : this.filterRegistry);
           const result = await childTransformer.transformNode(child);
           return Array.isArray(result) ? result : [result];
         })
@@ -83,7 +89,7 @@ export class NodeTransformer {
 
       const processedChildren = await Promise.all(
         node.children.map(async (child) => {
-          const childTransformer = new NodeTransformer(this.scope);
+          const childTransformer = new NodeTransformer(this.scope, this.useStaticRegistries ? undefined : this.tagPluginRegistry, this.useStaticRegistries ? undefined : this.filterRegistry);
           const result = await childTransformer.transformNode(child);
           return Array.isArray(result) ? result : [result];
         })
@@ -100,104 +106,108 @@ export class NodeTransformer {
   private isFragmentNode(node: Node): boolean {
     return (
       isMdxJsxElement(node) &&
-      (node.name === null ||
-        node.name === '' ||
-        node.name === 'Fragment' ||
-        node.name === 'React.Fragment')
+      (node as any).name === null &&
+      (node as any).children &&
+      (node as any).children.length > 0
     );
   }
 
-  evaluateExpressionNode(node: Node): Node {
-    const expression = (node as any).value;
+  private evaluateExpressionNode(node: any): Node | Node[] {
+    const raw = node.value;
+    const pipeMatch = raw.match(/^([^|]+)\|([^|]+)$/);
+    const isFilter = pipeMatch && pipeMatch[1] && pipeMatch[2];
+    
+    if (isFilter) {
+      try {
+        const leftSide = pipeMatch[1].trim();
+        const rightSide = pipeMatch[2].trim();
+        
+        let value;
+        try {
+          // Try to parse the left side as a JavaScript expression
+          const expression = jsep(leftSide);
+          value = this.evaluateJsepExpression(expression);
+        } catch (error) {
+          // If parsing fails, treat it as a variable
+          value = this.resolveVariable(leftSide);
+        }
+        
+        const filterExpression = jsep(rightSide);
+        const result = this.applyFilter(filterExpression, value);
+        
+        return {
+          type: NODE_TYPES.TEXT,
+          value: String(result),
+        } as Node;
+      } catch (error) {
+        throw new Error(`Error evaluating filter: ${(error as Error).message}`);
+      }
+    }
+    
     try {
-      const evaluatedValue = this.resolveExpression(expression);
+      const expression = jsep(raw);
+      const result = this.evaluateJsepExpression(expression);
+      
       return {
         type: NODE_TYPES.TEXT,
-        value: stringifyValue(evaluatedValue),
+        value: String(result),
       } as Node;
-    } catch (error: any) {
-      throw new Error(
-        `Error evaluating expression "${expression}": ${error.message}`
-      );
+    } catch (error) {
+      throw new Error(`Error evaluating expression: ${(error as Error).message}`);
     }
   }
 
-  resolveExpression(expression: string): any {
-    expression = expression.trim();
-    let ast: jsep.Expression;
-    try {
-      ast = jsep(expression);
-    } catch (e) {
-      throw new Error(`Failed to parse expression: "${expression}"`);
+  private evaluateJsepExpression(node: jsep.Expression): any {
+    if (node.type === 'CallExpression') {
+      return this.evaluateCallExpression(node as jsep.CallExpression);
     }
-    return this.evaluateJsepExpression(ast);
-  }
 
-  evaluateJsepExpression(node: jsep.Expression): any {
-    switch (node.type) {
-      case 'BinaryExpression':
-        return this.evaluateBinaryExpression(node as jsep.BinaryExpression);
-
-      case 'UnaryExpression':
-        return this.evaluateUnaryExpression(node as jsep.UnaryExpression);
-
-      case 'Literal':
-        return (node as jsep.Literal).value;
-
-      case 'Identifier':
-        return this.resolveVariable((node as jsep.Identifier).name);
-
-      case 'MemberExpression':
-        return this.evaluateMemberExpression(node as jsep.MemberExpression);
-
-      case 'CallExpression':
-        return this.evaluateCallExpression(node as jsep.CallExpression);
-
-      case 'ArrayExpression':
-        return this.evaluateArrayExpression(node as jsep.ArrayExpression);
-
-      case 'ObjectExpression':
-        return this.evaluateObjectExpression(node as any);
-
-      default:
-        throw new Error(`Unsupported node type: ${node.type}`);
+    if (node.type === 'Identifier') {
+      return this.resolveVariable((node as jsep.Identifier).name);
     }
-  }
 
-  evaluateArrayExpression(node: jsep.ArrayExpression): any[] {
-    return node.elements.map((element) => this.evaluateJsepExpression(element!));
-  }
-
-  evaluateObjectExpression(node: any): object {
-    const obj: Record<string, any> = {};
-    for (const property of node.properties) {
-      let key: string;
-      if (property.key.type === 'Identifier') {
-        key = property.key.name;
-      } else if (property.key.type === 'Literal') {
-        key = property.key.value;
-      } else {
-        throw new Error(`Unsupported object key type: ${property.key.type}`);
-      }
-      const value = this.evaluateJsepExpression(property.value);
-      obj[key] = value;
+    if (node.type === 'MemberExpression') {
+      return this.evaluateMemberExpression(node as jsep.MemberExpression);
     }
-    return obj;
+
+    if (node.type === 'ObjectExpression') {
+      return this.evaluateObjectExpression(node as any);
+    }
+
+    if (node.type === 'ArrayExpression') {
+      return this.evaluateArrayExpression(node as jsep.ArrayExpression);
+    }
+
+    if (node.type === 'BinaryExpression') {
+      return this.evaluateBinaryExpression(node as jsep.BinaryExpression);
+    }
+
+    if (node.type === 'UnaryExpression') {
+      return this.evaluateUnaryExpression(node as jsep.UnaryExpression);
+    }
+
+    if (node.type === 'Literal') {
+      return (node as jsep.Literal).value;
+    }
+
+    throw new Error(`Unsupported expression type: ${node.type}`);
   }
 
-  evaluateCallExpression(node: jsep.CallExpression): any {
-    const callee = node.callee;
-    if (callee.type !== 'Identifier') {
+  private evaluateCallExpression(node: jsep.CallExpression): any {
+    const { callee } = node;
+    if (!callee || callee.type !== 'Identifier') {
       throw new Error(`Only calls to registered filters are allowed.`);
     }
 
     const functionName = (callee as jsep.Identifier).name;
-    const filterFunction = FilterRegistry.get(functionName);
+    const filterFunction = this.useStaticRegistries 
+      ? FilterRegistry.get(functionName) 
+      : this.filterRegistry.get(functionName);
     if (!filterFunction) {
       throw new Error(`Filter "${functionName}" is not registered.`);
     }
 
-    const args = node.arguments.map(arg => this.evaluateJsepExpression(arg));
+    const args = node.arguments.map((arg: jsep.Expression) => this.evaluateJsepExpression(arg));
     const [input, ...rest] = args;
     return filterFunction(input, ...rest);
   }
@@ -208,93 +218,141 @@ export class NodeTransformer {
     }
 
     const parts = variablePath.split('.');
-    let value: any;
-
-    try {
-      value = this.scope.get(parts[0]);
-    } catch (error) {
-      throw new Error(`Variable "${parts[0]}" is not defined in the scope.`);
+    let current = this.scope.get(parts[0]);
+    
+    if (current === undefined) {
+      throw new Error(`Variable "${parts[0]}" is not defined.`);
     }
 
     for (let i = 1; i < parts.length; i++) {
-      const part = parts[i];
-      if (value == null) {
-        throw new Error(
-          `Cannot access property "${part}" of null or undefined in "${variablePath}".`
-        );
+      if (current === null || current === undefined) {
+        throw new Error(`Cannot access property "${parts[i]}" of ${current}.`);
       }
-      value = value[part];
+      current = current[parts[i]];
     }
 
-    return value;
+    return current;
   }
 
-  evaluateBinaryExpression(node: jsep.BinaryExpression): any {
-    const operatorFunctions: { [key: string]: OperatorFunction } = {
-      '+': (left, right) => left + this.evaluateJsepExpression(right),
-      '-': (left, right) => left - this.evaluateJsepExpression(right),
-      '*': (left, right) => left * this.evaluateJsepExpression(right),
-      '/': (left, right) => left / this.evaluateJsepExpression(right),
-      '%': (left, right) => left % this.evaluateJsepExpression(right),
-      '==': (left, right) => left == this.evaluateJsepExpression(right),
-      '!=': (left, right) => left != this.evaluateJsepExpression(right),
-      '>': (left, right) => left > this.evaluateJsepExpression(right),
-      '>=': (left, right) => left >= this.evaluateJsepExpression(right),
-      '<': (left, right) => left < this.evaluateJsepExpression(right),
-      '<=': (left, right) => left <= this.evaluateJsepExpression(right),
-      '&&': (left, right) => left && this.evaluateJsepExpression(right),
-      '||': (left, right) => left || this.evaluateJsepExpression(right),
-    };
-    const operator = node.operator;
+  private applyFilter(filterExpression: jsep.Expression, value: any): any {
+    if (filterExpression.type === 'CallExpression') {
+      const callExpr = filterExpression as jsep.CallExpression;
+      const { callee } = callExpr;
+      if (!callee || callee.type !== 'Identifier') {
+        throw new Error(`Only calls to registered filters are allowed.`);
+      }
 
-    const operation = operatorFunctions[operator];
-    if (!operation) {
-      throw new Error(`Operator "${operator}" is not allowed.`);
+      const functionName = (callee as jsep.Identifier).name;
+      const filterFunction = this.useStaticRegistries 
+        ? FilterRegistry.get(functionName) 
+        : this.filterRegistry.get(functionName);
+      if (!filterFunction) {
+        throw new Error(`Filter "${functionName}" is not registered.`);
+      }
+
+      const args = callExpr.arguments.map((arg: jsep.Expression) => this.evaluateJsepExpression(arg));
+      return filterFunction(value, ...args);
     }
 
-    const left = this.evaluateJsepExpression(node.left);
+    if (filterExpression.type === 'Identifier') {
+      const functionName = (filterExpression as jsep.Identifier).name;
+      const filterFunction = this.useStaticRegistries 
+        ? FilterRegistry.get(functionName) 
+        : this.filterRegistry.get(functionName);
+      if (!filterFunction) {
+        throw new Error(`Filter "${functionName}" is not registered.`);
+      }
 
-    return operation(left, node.right);
-  }
-
-  evaluateUnaryExpression(node: jsep.UnaryExpression): any {
-    const argument = this.evaluateJsepExpression(node.argument);
-    switch (node.operator) {
-      case '+':
-        return +argument;
-      case '-':
-        return -argument;
-      case '!':
-        return !argument;
-      default:
-        throw new Error(`Unsupported operator: ${node.operator}`);
+      return filterFunction(value);
     }
+
+    throw new Error(`Unsupported filter expression type: ${filterExpression.type}`);
   }
 
-  evaluateMemberExpression(node: jsep.MemberExpression): any {
+  private evaluateMemberExpression(node: jsep.MemberExpression): any {
     const object = this.evaluateJsepExpression(node.object);
-    const property = node.computed
+    const property = node.computed 
       ? this.evaluateJsepExpression(node.property)
       : (node.property as jsep.Identifier).name;
-
-    if (object && typeof object === 'object' && property in object) {
-      if (object[property] === undefined) return '';
-      return object[property];
-    } else {
-      return '';
-    }
+    
+    return object[property];
   }
 
-  async processMdxJsxElement(
+  private evaluateObjectExpression(node: any): any {
+    const result: any = {};
+    for (const property of node.properties) {
+      const key = property.key.type === 'Identifier' 
+        ? property.key.name 
+        : this.evaluateJsepExpression(property.key);
+      const value = this.evaluateJsepExpression(property.value);
+      result[key] = value;
+    }
+    return result;
+  }
+
+  private evaluateArrayExpression(node: jsep.ArrayExpression): any {
+    return node.elements.map((element: jsep.Expression | null) => element ? this.evaluateJsepExpression(element) : null);
+  }
+
+  private evaluateBinaryExpression(node: jsep.BinaryExpression): any {
+    const left = this.evaluateJsepExpression(node.left);
+    const right = this.evaluateJsepExpression(node.right);
+    
+    const operators: Record<string, OperatorFunction> = {
+      '+': (l, r) => (l as any) + (r as any),
+      '-': (l, r) => (l as any) - (r as any),
+      '*': (l, r) => (l as any) * (r as any),
+      '/': (l, r) => (l as any) / (r as any),
+      '%': (l, r) => (l as any) % (r as any),
+      '==': (l, r) => l == r,
+      '!=': (l, r) => l != r,
+      '===': (l, r) => l === r,
+      '!==': (l, r) => l !== r,
+      '<': (l, r) => l < r,
+      '<=': (l, r) => l <= r,
+      '>': (l, r) => l > r,
+      '>=': (l, r) => l >= r,
+      '&&': (l, r) => l && r,
+      '||': (l, r) => l || r,
+    };
+
+    const operator = operators[node.operator];
+    if (!operator) {
+      throw new Error(`Unsupported binary operator: ${node.operator}`);
+    }
+
+    return operator(left, right);
+  }
+
+  private evaluateUnaryExpression(node: jsep.UnaryExpression): any {
+    const argument = this.evaluateJsepExpression(node.argument);
+    
+    const operators: Record<string, (x: any) => any> = {
+      '-': (x) => -x,
+      '+': (x) => +x,
+      '!': (x) => !x,
+    };
+
+    const operator = operators[node.operator];
+    if (!operator) {
+      throw new Error(`Unsupported unary operator: ${node.operator}`);
+    }
+
+    return operator(argument);
+  }
+
+  private async processMdxJsxElement(
     node: MdxJsxFlowElement | MdxJsxTextElement
   ): Promise<Node | Node[]> {
     try {
       const tagName = node.name!;
-      const plugin = TagPluginRegistry.get(tagName);
+      const plugin = this.useStaticRegistries 
+        ? TagPluginRegistry.get(tagName) 
+        : this.tagPluginRegistry.get(tagName);
       if (plugin) {
         const props = this.evaluateProps(node);
         const pluginContext: PluginContext = {
-          createNodeTransformer: (scope: Scope) => new NodeTransformer(scope),
+          createNodeTransformer: (scope: Scope) => new NodeTransformer(scope, this.useStaticRegistries ? undefined : this.tagPluginRegistry, this.useStaticRegistries ? undefined : this.filterRegistry),
           scope: this.scope,
           tagName,
           nodeHelpers,
@@ -305,8 +363,8 @@ export class NodeTransformer {
         const newNode = { ...node } as Parent;
 
         const processedChildren = await Promise.all(
-          node.children.map(async (child) => {
-            const childTransformer = new NodeTransformer(this.scope);
+          node.children.map(async (child: any) => {
+            const childTransformer = new NodeTransformer(this.scope, this.useStaticRegistries ? undefined : this.tagPluginRegistry, this.useStaticRegistries ? undefined : this.filterRegistry);
             const result = await childTransformer.transformNode(child);
             return Array.isArray(result) ? result : [result];
           })
@@ -324,26 +382,21 @@ export class NodeTransformer {
 
   evaluateProps(node: any): Record<string, any> {
     const props: Record<string, any> = {};
-
-    for (const attr of node.attributes) {
-      if (attr.type === MDX_JSX_ATTRIBUTE_TYPES.MDX_JSX_ATTRIBUTE) {
-        if (attr.value === null || typeof attr.value === 'string') {
-          props[attr.name] = attr.value || '';
-        } else if (
-          attr.value.type ===
-          MDX_JSX_ATTRIBUTE_TYPES.MDX_JSX_ATTRIBUTE_VALUE_EXPRESSION
-        ) {
-          const expression = attr.value.value;
-          props[attr.name] = this.resolveExpression(expression);
+    
+    (node.attributes || []).forEach((attr: any) => {
+      if (attr.type === MDX_JSX_ATTRIBUTE_TYPES.MDX_JSX_EXPRESSION_ATTRIBUTE) {
+        const expression = jsep(attr.value);
+        props[attr.name] = this.evaluateJsepExpression(expression);
+      } else if (attr.type === MDX_JSX_ATTRIBUTE_TYPES.MDX_JSX_ATTRIBUTE) {
+        const value = attr.value;
+        if (value && value.type === MDX_JSX_ATTRIBUTE_TYPES.MDX_JSX_ATTRIBUTE_VALUE_EXPRESSION) {
+          const expression = jsep(value.value);
+          props[attr.name] = this.evaluateJsepExpression(expression);
+        } else {
+          props[attr.name] = value ? stringifyValue(value) : true;
         }
-      } else if (
-        attr.type === MDX_JSX_ATTRIBUTE_TYPES.MDX_JSX_EXPRESSION_ATTRIBUTE
-      ) {
-        throw new Error(
-          `Unsupported attribute type in component <${node.name}>.`
-        );
       }
-    }
+    });
 
     return props;
   }
@@ -353,9 +406,11 @@ export const transformTree = async (
   tree: Root,
   props: Record<string, any> = {},
   shared: Record<string, any> = {},
+  tagPluginRegistry?: TagPluginRegistry,
+  filterRegistry?: FilterRegistry
 ): Promise<Root> => {
   const scope = new Scope({ props }, shared);
-  const transformer = new NodeTransformer(scope);
+  const transformer = new NodeTransformer(scope, tagPluginRegistry, filterRegistry);
   const processedTree = await transformer.transformNode(tree);
   return processedTree as Root;
 };

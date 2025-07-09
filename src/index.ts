@@ -13,6 +13,7 @@ import type { ContentLoader } from "./types";
 import type { Root } from "mdast";
 import { getDirname } from "./utils";
 import type { BaseMDXProvidedComponents } from './types';
+import { TemplateDX } from './templatedx';
 import './global.d';
 import './register-builtin-plugins';
 
@@ -51,5 +52,6 @@ export {
   transformTree as transform,
   TagPluginRegistry,
   TagPlugin,
-  FilterRegistry
+  FilterRegistry,
+  TemplateDX
 };
