@@ -1,5 +1,11 @@
 # @agentmark/templatedx
 
+## 0.8.1
+
+### Patch Changes
+
+- 28e2c46: Fix: arrays/conditionals can handle null/missing values
+
 ## 0.8.0
 
 ### Minor Changes
