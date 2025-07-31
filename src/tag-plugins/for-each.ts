@@ -54,10 +54,7 @@ export class ForEachPlugin extends TagPlugin {
       throw new Error('ForEach expects a function as its child.');
     }
     const { body, argumentNames } = getFunctionBody(childNode);
-    const arr = props['arr'];
-    if (!Array.isArray(arr)) {
-      throw new Error(`The 'arr' prop for <ForEach> must be an array.`);
-    }
+    const arr = Array.isArray(props['arr']) ? props['arr'] : [];
 
     const itemParamName = argumentNames[0];
     const indexParamName = argumentNames[1];
