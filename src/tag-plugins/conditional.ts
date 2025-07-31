@@ -42,12 +42,7 @@ export class ConditionalPlugin extends TagPlugin {
     let shouldRender = false;
 
     if (tagName === "If" || tagName === "ElseIf") {
-      const condition = props["condition"];
-      if (typeof condition !== "boolean") {
-        throw new Error(
-          `The 'condition' prop for <${tagName}> must be a boolean.`
-        );
-      }
+      const condition = typeof props["condition"] === "boolean" ? props["condition"] : false;
       if (condition) {
         shouldRender = true;
       }
